@@ -11,7 +11,7 @@ Master record of every Short we script, so we never repeat a topic and can spot 
 
 | ID | Topic | Hook | Length | Status | Script file | Published | Views | Retention | Notes |
 |------|-------|------|--------|--------|-------------|-----------|-------|-----------|-------|
-| F-001 | Cleopatra vs Pyramids vs Moon landing | "Cleopatra is closer to YOU than to the Pyramids." | 28s | scripted | [scripts/F-001-cleopatra-vs-pyramids.md](scripts/F-001-cleopatra-vs-pyramids.md) | — | — | — | First episode; timeline/number-reveal; reviewer 92/100 |
+| F-001 | Cleopatra vs Pyramids vs Moon landing | "Cleopatra is closer to YOU than to the Pyramids." | 28s | scripted (v3) | [scripts/F-001-cleopatra-vs-pyramids.md](scripts/F-001-cleopatra-vs-pyramids.md) | — | — | — | First episode; vertical-timeline number-reveal; **v3 visual overhaul** after v2 rendered flat; reviewer 93/100 (9-cat rubric) |
 
 ## 🟡 Data Viz / Rankings
 *(none yet — niche planned)*
