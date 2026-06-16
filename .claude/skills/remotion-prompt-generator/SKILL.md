@@ -19,7 +19,7 @@ exact text · font family/weight/size · color hex · entrance + exit animation 
 - Composition: **1080×1920, fps 30**, `durationInFrames` = the script total. Frames 0-indexed; ranges half-open and contiguous (`next.start == prev.end`); last visual loops back to frame 0.
 - Animation via `interpolate()` with `extrapolateLeft/Right: 'clamp'` and `Easing.bezier(...)`, or `spring()` — give configs from the motion signature. **No `Math.random()`** — use Remotion `random(seed)`.
 - Captions: burned-in, word-by-word, hand-timed to beats (no Whisper — there's no voiceover). Keep clear of bottom ~15% and the very top.
-- Audio: layered `<Audio>` from `@remotion/media`; music bed volume ~0.10–0.15 via a frame-callback for fades; SFX at the frames named in `04-audio.md`. Reference files via `staticFile()` from `public/` (the renderer adds them; this prompt names the expected filenames).
+- Audio: layered `<Audio>` from `@remotion/media`; **no voiceover, so the music bed is the LEAD — volume ~0.65–0.80** (NOT 0.1x) via a frame-callback for fades; accent SFX 0.5–0.7, reveal hit 0.9–1.0, at the frames named in `04-audio.md`. Reference files via `staticFile()` from `public/`. **Final render must be mastered to -14 LUFS / ≤ -1 dBTP** via the two-pass `loudnorm` post-step (see `04-audio.md` master target) — encode it as the last render instruction.
 
 ## `05-remotion-prompt.md` template
 ```markdown
@@ -41,9 +41,10 @@ exact text · font family/weight/size · color hex · entrance + exit animation 
 ## Captions
 - Word-by-word, hand-timed. Per scene: words + their frame windows. Safe zone: bottom 15% / top clear.
 
-## Audio
-- Music: `public/<file>` @ vol 0.1x, fade in <f>/out <f>.
-- SFX: `public/<file>` at frame <n>; …
+## Audio (no voiceover — bed is the lead)
+- Music: `public/<file>` @ vol 0.65–0.80, fade in <f>/out <f>; swell ~+3 dB into the reveal.
+- SFX: `public/<file>` at frame <n> @ vol 0.5–0.7; reveal hit @ 0.9–1.0.
+- **Master (final step): run two-pass `loudnorm` on the rendered `out.mp4` → -14 LUFS / ≤ -1 dBTP / LRA 11, then verify.**
 
 ## Loop-back
 - Final frame matches frame 0 (<how>) so the auto-loop is invisible.

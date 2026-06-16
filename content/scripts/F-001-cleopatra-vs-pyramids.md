@@ -80,7 +80,7 @@
 
 ## 🔊 Audio
 - **Track vibe:** low, suspenseful build — minimal ticking/pulsing bed that rises subtly into the Beat 6 payoff, then resolves on the loop. No lyrics (would fight the captions).
-- **Mix note:** music well under captions; soft "lock"/tick SFX on each year-stamp (Beats 1,2,4) and a single low "reveal" hit on the Beat 6 payoff. SFX timing detailed in `04-audio.md`.
+- **Mix note:** no VO → the music bed is the LEAD (mix it loud, not "under" anything); soft "lock"/tick SFX on each year-stamp (Beats 1,2,4) and a single low "reveal" hit on the Beat 6 payoff; final render mastered to -14 LUFS / ≤ -1 dBTP. SFX timing detailed in `04-audio.md`.
 
 ---
 

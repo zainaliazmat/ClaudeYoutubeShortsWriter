@@ -32,9 +32,10 @@ Step 7 (final) of the `/short` pipeline. The run folder `output/F-NNN-<slug>/` a
 ## Render checklist
 1. Scaffold/open the Remotion project (`npx create-video@latest`; `npx skills add remotion-dev/skills`).
 2. Download the audio in 04-audio.md from its ORIGINAL source into `public/`; keep license receipts.
-3. Hand 05-remotion-prompt.md to the Remotion skills to build the composition.
+3. Hand 05-remotion-prompt.md to the Remotion skills to build the composition. **No VO → mix the music bed as the LEAD (~0.65–0.80), never ducked.** For the dark gradient, render 10-bit if you can (`--codec h265 --crf 18`, 10-bit pixel format) so the master can copy video.
 4. Render: `npx remotion render <entry> F-NNN-<slug> out.mp4`.
-5. Upload: title/description from the script's metadata section.
+5. **Master audio → two-pass `loudnorm` to -14 LUFS / ≤ -1 dBTP / LRA 11 (see 04-audio.md master target), output `final.mp4`, then VERIFY (`ffmpeg -i final.mp4 -af loudnorm=...:print_format=json -f null -` → integrated ≈ -14, peak ≤ -1).** Quiet masters are not boosted by YouTube. Upload `final.mp4`, not `out.mp4`.
+6. Upload: title/description from the script's metadata section.
 
 ## YouTube AI disclosure
 AI was used only for script/research production — **exempt** from YouTube's altered/synthetic-content disclosure. Toggle "Altered or synthetic content" ONLY if synthetic media (AI faces/voices/realistic scenes) is later added.
@@ -48,7 +49,7 @@ AI was used only for script/research production — **exempt** from YouTube's al
 ## 3. Completeness gate (must pass before "done")
 Verify and report each as ✅/❌:
 1. Every claim in `02-script.md` is sourced in `01-verified-facts.md`.
-2. `04-audio.md` is monetization-safe with license recorded (no CC-BY-NC).
+2. `04-audio.md` is monetization-safe (no CC-BY-NC) **and states the -14 LUFS / ≤ -1 dBTP master target + two-pass loudnorm step** (the fix for F-001's -30 LUFS bug).
 3. Captions are timed to beats in `05-remotion-prompt.md`.
 4. Frame math passed the remotion-script-reviewer validator (see `06-scorecard.md`).
 5. AI-disclosure note present in `README.md`.

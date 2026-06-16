@@ -11,7 +11,7 @@ Frame math tiles exactly, the timeline/number-reveal concept is fully specified 
 | Visual Specification Completeness | 16 | 18 | Every beat has exact text, layout band, simultaneity, and a clear visual. Per-beat hex + z-order live in 03/05, not in 02 itself (−2). |
 | Animation Feasibility & Specificity | 13 | 15 | Every motion maps to a concrete API and fits its budget (count-up 0→2,500 over 105f, bracket stretch 30f, etc.). Spring tension/damping is in 03/05 rather than inline in 02 (−2). |
 | Text & Caption Clarity | 12 | 12 | Word-by-word, hand-timed with explicit per-word frame windows; high contrast; no per-char opacity typewriter. |
-| Audio Sync | 9 | 10 | Vibe + mix note ("music under captions") + SFX on named cuts; exact frame numbers carried in 04-audio (ticks @150/255/480, reveal hit @600) (−1 for frames living one file over). |
+| Audio Sync | 9 | 10 | Vibe + mix note (bed is the LEAD, mastered to -14 LUFS / -1 dBTP — corrected; see 04-audio.md) + SFX on named cuts; exact frame numbers carried in 04-audio (ticks @150/255/480, reveal hit @600) (−1 for frames living one file over). |
 | Loop Integrity | 10 | 10 | Final frame (840) cross-dissolves to exact frame-0 layout; nothing mid-animation at wrap (hold 720–765 then dissolve). |
 | Platform Compliance | 8 | 8 | 1080×1920; captions kept clear of bottom ~15% and top ~8%; center band only. |
 | Creative Effectiveness / Retention | 6 | 7 | Hook legible <0.5s, claim→proof→claim structure. Beat 6 = 5.5s (>5s) flagged, but justified as the payoff dwell (−1). |

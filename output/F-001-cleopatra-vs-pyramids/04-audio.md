@@ -19,8 +19,8 @@
 
 **Mood / fit:** Low, minimal, tension-building ambient cinematic — dark thriller atmosphere with no lyrics. Matches the script's "low, suspenseful build that rises subtly into the Beat 6 payoff, then resolves on the loop." No vocals to fight word-by-word captions.
 
-**Mix:**
-- Bed level: -20 dB under dialogue baseline (approximately 10–12% of full scale). Remotion `<Audio volume={0.11}>`.
+**Mix (no voiceover — the bed is the LEAD, not a background):**
+- Bed level: **`<Audio volume={0.72}>`** — this is the only sustained audio, so it carries the video. (The original spec said "-20 dB under dialogue baseline → `volume={0.11}`" — WRONG: there is no dialogue. That single line is what shipped F-001 at -30 LUFS.)
 - Fade in: 0→full over frames 0–30 (first 1 second).
 - Hold at full from frame 30 to frame 600 (Beat 5 end).
 - Subtle swell: +3 dB gain ramp from frame 540→600 (1 beat before payoff) to underscore the reveal build.
@@ -41,12 +41,36 @@ All SFX from **Pixabay Sound Effects** — Pixabay Content License, free commerc
 | Bracket whoosh | Short air-whoosh as bracket stretches across the timeline | **255** (bracket begins stretching Beat 2→3) and **480** (second bracket Beat 5) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/whoosh/ | Pixabay Content License — commercial use, no attribution |
 | Low reveal hit (payoff) | Single deep cinematic impact / low boom — the "oh wow" hit | **600** (Beat 6 payoff start: "~450 YEARS CLOSER" stamps) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/cinematic-hit/ | Pixabay Content License — commercial use, no attribution |
 
-**SFX mix levels:**
-- Year-stamp ticks: -10 dB (punchy but not jarring). Remotion `<Audio volume={0.30}>` per instance.
-- Bracket whooshes: -14 dB (subtle pass). Remotion `<Audio volume={0.20}>`.
-- Low reveal hit (frame 600): -6 dB (this is the emotional peak — let it land). Remotion `<Audio volume={0.50}>`.
+**SFX mix levels (sit above the lead bed; the reveal hit is loudest):**
+- Year-stamp ticks: punchy accent. Remotion `<Audio volume={0.60}>` per instance.
+- Bracket whooshes: quick pass, just above the bed. Remotion `<Audio volume={0.50}>`.
+- Low reveal hit (frame 600): the emotional peak — loudest element, peak near -1 dBFS in the render. Remotion `<Audio volume={0.95}>`.
 
 **SFX render note:** All three tick cues use the same single file — load it once and sequence three `<Audio>` instances with `startFrom` matching the beat frame offsets. Remotion handles overlapping audio instances cleanly.
+
+---
+
+## Master target (final render) — REQUIRED
+
+Per-element volumes above are *balance*. The rendered file's *loudness* is set here:
+
+- **-14 LUFS integrated · ≤ -1 dBTP · LRA 11.** Apply the two-pass `loudnorm` from `.claude/skills/asset-sourcing/references/audio-mastering.md` to `out.mp4` → `final.mp4`, then verify. Upload `final.mp4`.
+
+### Mastering result (measured — this is the F-001 fix)
+
+| | Integrated | True peak | LRA | In-feed |
+|---|---|---|---|---|
+| **As first rendered** (bed `0.11`, no master) | **-30.6 LUFS** | -8.3 dBTP | 13.7 | near-silent vs other Shorts |
+| **After two-pass loudnorm to -14** | **-14.8 LUFS** | -0.65 dBTP | 11.9 | correct; riser build→hit preserved |
+
+Exact command used (audio re-leveled; the quiet build → reveal-hit dynamics survived):
+```bash
+# pass 1: measure  →  pass 2:
+ffmpeg -i out.mp4 -c:v copy \
+  -af loudnorm=I=-14:TP=-1:LRA=11:measured_I=-30.62:measured_TP=-8.31:measured_LRA=13.70:measured_thresh=-41.34:offset=-0.95:linear=false \
+  -c:a aac -b:a 192k -ar 48000 -movflags +faststart final.mp4
+```
+(A 0.25s black fade-in at the head was also trimmed — a video fix; see CLAUDE.md "frame 1 = no black lead".)
 
 ---
 

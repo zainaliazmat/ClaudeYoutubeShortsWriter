@@ -59,7 +59,7 @@ Fill every section. Delete the parenthetical guidance. Times assume 30fps — gi
 
 ## 🔊 Audio
 - **Track vibe:** (trending sound or royalty-free; describe energy/tempo)
-- **Mix note:** keep music under captions; punch-in SFX on key cuts if it suits the format
+- **Mix note:** no voiceover → the music bed is the LEAD — mix it loud, never "under" anything; punch-in SFX on key cuts. Final render mastered to -14 LUFS / ≤ -1 dBTP (see asset-sourcing `audio-mastering.md`).
 
 ---
 

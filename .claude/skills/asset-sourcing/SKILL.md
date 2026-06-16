@@ -23,12 +23,12 @@ The goal is a **recognizable, repeatable Fathom type/color/motion signature** (p
 
 ## B. `04-audio.md` — music + SFX (monetization-safe)
 
-Follow `references/audio-sources.md` for the source policy. For the ONE background track and any SFX:
+Follow `references/audio-sources.md` for the source policy and `references/audio-mastering.md` for loudness/mix. For the ONE background track and any SFX:
 
 1. Search the allowed libraries (YouTube Audio Library, Pixabay, Uppbeat free) for a track matching the script's energy/tempo and runtime.
 2. Record per pick: **title, artist, source library, direct URL, license, attribution required? (yes/no + exact credit string), monetization-safe? (must be yes)**.
 3. **Reject** anything CC-BY-NC, unknown-license, or from a re-upload channel. Prefer YouTube Audio Library (YouTube-certified, no Content-ID claims).
-4. Specify the **mix:** music bed at ~0.10–0.15 under captions; name SFX punch-ins by frame (e.g. "whoosh on each beat cut", "ding on the reveal at frame X").
+4. Specify the **mix** per `references/audio-mastering.md`. **There is NO voiceover — the music bed is the LEAD, never ducked "under captions."** Bed at **~0.65–0.80**, accent SFX at 0.5–0.7 (above the bed), the reveal hit loudest at ~0.9–1.0. Name SFX punch-ins by frame (e.g. "whoosh on each beat cut", "low hit on the reveal at frame X"). Then state the **final-master target: -14 LUFS integrated / ≤ -1 dBTP / LRA 11**, applied via the two-pass `loudnorm` step in `audio-mastering.md` at render time. Per-element volumes are balance; the master sets loudness — both required.
 5. Note: files are downloaded from the original source at render time — this spec just pins the choice + license receipt.
 
 ## Templates
@@ -52,11 +52,14 @@ Follow `references/audio-sources.md` for the source policy. For the ONE backgrou
 # F-NNN — Audio (spec, monetization-safe)
 ## Music bed
 - Title / Artist · Source: <library> · URL: <…> · License: <…> · Attribution: <no | "credit string"> · Monetization-safe: yes
-- Mix: bed at 0.1<x> under captions; fade in <f>f / out <f>f
+- Mix (no VO — bed is the lead): bed at 0.65–0.80; swell ~+3 dB into the reveal; fade in <f>f / out <f>f
 ## SFX
-| Cue | At frame | Source | URL | License |
-|-----|----------|--------|-----|---------|
-| whoosh | … | … | … | … |
+| Cue | At frame | Vol | Source | URL | License |
+|-----|----------|-----|--------|-----|---------|
+| whoosh | … | 0.5–0.7 | … | … | … |
+| reveal hit | … | 0.9–1.0 | … | … | … |
+## Master target (final render)
+- **-14 LUFS integrated · ≤ -1 dBTP · LRA 11** — apply the two-pass `loudnorm` from `references/audio-mastering.md` to `out.mp4`, then verify. Quieter masters are NOT boosted by YouTube.
 ## Render note
 - Download each item from its original source at render time; keep the license receipt.
 ```

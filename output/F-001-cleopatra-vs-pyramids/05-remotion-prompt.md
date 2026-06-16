@@ -124,12 +124,13 @@ Render each word group as it pops; accent color on the hero word/number per beat
 ## Audio (`@remotion/media` `<Audio>`; reference via `staticFile()` from `public/`)
 Renderer downloads files from the URLs in `04-audio.md` at render time and places them in `public/`. Expected filenames below.
 
-- **Music bed:** `public/music-dark-tension.mp3` — base `volume={0.11}` via frame-callback:
-  - fade in 0→0.11 over frames 0–30; hold 0.11 to frame 540; swell 0.11→~0.155 over 540–600; hold through 720; fade ~0.155→0 over 765–840 (silent at 840 for clean loop).
-- **SFX** (all Pixabay Content License; one tick file reused 3×):
-  - `public/sfx-tick.mp3` at **frame 150**, **255**, **480** — `volume={0.30}` each (sequence 3 `<Audio>` instances with matching `startFrom`/offset).
-  - `public/sfx-whoosh.mp3` at **frame 255** and **480** — `volume={0.20}` (bracket stretches).
-  - `public/sfx-reveal-hit.mp3` at **frame 600** — `volume={0.50}` (payoff peak).
+- **Music bed (LEAD — no VO):** `public/music-dark-tension.mp3` — base `volume={0.72}` via frame-callback:
+  - fade in 0→0.72 over frames 0–30; hold 0.72 to frame 540; swell 0.72→~1.0 over 540–600; hold through 720; fade ~1.0→0 over 765–840 (silent at 840 for clean loop).
+- **SFX** (all Pixabay Content License; one tick file reused 3×; SFX sit above the bed):
+  - `public/sfx-tick.mp3` at **frame 150**, **255**, **480** — `volume={0.60}` each (sequence 3 `<Audio>` instances with matching `startFrom`/offset).
+  - `public/sfx-whoosh.mp3` at **frame 255** and **480** — `volume={0.50}` (bracket stretches).
+  - `public/sfx-reveal-hit.mp3` at **frame 600** — `volume={0.95}` (payoff peak; loudest element).
+- **Master (final step, not in Remotion):** run two-pass `loudnorm` on the rendered `out.mp4` → **-14 LUFS / ≤ -1 dBTP / LRA 11**, then verify. See `04-audio.md` master target. Upload the mastered file.
 
 ---
 
