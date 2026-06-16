@@ -14,8 +14,9 @@ Faceless **Fathom** YouTube Shorts channel. Videos are written as frame-timed sc
 3. **youtube-shorts-writer** skill (reads `01-verified-facts.md`) → `02-script.md`. The writer may use ONLY claims present in `01-verified-facts.md`. No new facts.
 4. **asset-sourcing** skill, run via the **asset-scout** subagent → `03-assets.md` (fonts, hex palette, motion signature, icons/bg) + `04-audio.md` (music + SFX picks with URL, license, attribution, mix levels, per-beat timing). Spec-only.
 5. **remotion-prompt-generator** skill (reads `02-script.md` + `03-assets.md` + `04-audio.md`) → `05-remotion-prompt.md`.
-6. **Review loop (evaluator-optimizer):** run **remotion-script-reviewer** on `02-script.md`. If score < 80 or any blocker, revise via the writer and re-score. **Max 3 iterations.** Write final → `06-scorecard.md`.
+6. **Review loop (evaluator-optimizer):** run **remotion-script-reviewer** on `02-script.md` **AND `05-remotion-prompt.md` together** (the rubric's Category 9 — Visual Design Quality — grades the composition spec, where the visual decisions live). If score < 80, any blocker, or **Category 9 below ~70% of its weight** (flat/empty layout, dead space, invisible mechanic, scale-dishonest data viz), revise the responsible file (writer for `02`, prompt-generator for `05`, asset-sourcing for `03`) and re-score. **Max 3 iterations.** Write final → `06-scorecard.md`.
 7. **short-assembly** skill → write `README.md`, add the `VIDEO_LOG.md` row, archive the script into `content/scripts/`, append dated lessons to `memory/lessons.md`. Run the completeness gate (below) before declaring done.
+8. **render-qa** skill (POST-RENDER — runs only after the Remotion project produces `out.mp4`/`final.mp4`, not part of the spec package): inspect actual pixels against `05-remotion-prompt.md` — duration vs `durationInFrames`, loop seam (frame 0 == final frame), caption/glyph collisions, per-beat dead-space ratio, core-mechanic legibility, and integrated loudness (-14 LUFS / ≤ -1 dBTP). On FAIL, route back to the responsible spec file (not a manual one-off patch), regenerate, and re-render.
 
 ## Standards (non-negotiable)
 

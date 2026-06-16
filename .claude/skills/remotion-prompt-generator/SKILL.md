@@ -18,6 +18,10 @@ exact text · font family/weight/size · color hex · entrance + exit animation 
 ## Hard constraints to encode
 - Composition: **1080×1920, fps 30**, `durationInFrames` = the script total. Frames 0-indexed; ranges half-open and contiguous (`next.start == prev.end`); last visual loops back to frame 0.
 - Animation via `interpolate()` with `extrapolateLeft/Right: 'clamp'` and `Easing.bezier(...)`, or `spring()` — give configs from the motion signature. **No `Math.random()`** — use Remotion `random(seed)`.
+- **Composition & frame utilization (not just edge-avoidance):** lay out across the **full safe area (y≈260–1660)**, not a thin center band. Define **explicit vertical bands per scene** — e.g. context line (upper third), hero element (center), supporting visual / timeline (lower third) — so the frame is balanced and **no large dead zone is left** (>40% of safe-area height empty without a stated reason). The **hero element of each beat must be sized to dominate** (primary numbers ≥ ~280px). Emit a per-scene **"frame-fill note"** stating roughly how the safe-area height is used. A persistent **depth background** (gradient/glow/texture from `03-assets.md`) fills the rest — never leave flat black.
+- **Background depth:** encode the `03-assets.md` background as an actual gradient/glow/texture layer behind everything; reject a flat single-hex near-black. Make decorative layers (timeline, brackets, glyphs) **visible at viewing size** — thick bars/large shapes, not 1–2px hairlines or 36–48px icons.
+- **Overflow guard:** any line that could exceed the safe width at its size must use Remotion `fitText`/measured sizing. **Never let a caption collide with a glyph/marker** — reserve its lane (don't place a right-edge glyph in the same horizontal band as a long caption).
+- **Scale-honest data viz:** when the script compares magnitudes (gap A vs gap B), the on-screen lengths/positions **MUST be proportional to the values — compute positions from the numbers** — OR the exaggeration must be explicitly labeled. Do NOT pin arbitrary x-positions that contradict the payoff (F-001 drew a real ~5:4 gap as ~3:1 and undercut "~450 years closer"). Clamp any animated count-up display to **≥ 0** (never show a negative interim value).
 - Captions: burned-in, word-by-word, hand-timed to beats (no Whisper — there's no voiceover). Keep clear of bottom ~15% and the very top.
 - Audio: layered `<Audio>` from `@remotion/media`; **no voiceover, so the music bed is the LEAD — volume ~0.65–0.80** (NOT 0.1x) via a frame-callback for fades; accent SFX 0.5–0.7, reveal hit 0.9–1.0, at the frames named in `04-audio.md`. Reference files via `staticFile()` from `public/`. **Final render must be mastered to -14 LUFS / ≤ -1 dBTP** via the two-pass `loudnorm` post-step (see `04-audio.md` master target) — encode it as the last render instruction.
 
@@ -29,14 +33,19 @@ exact text · font family/weight/size · color hex · entrance + exit animation 
 - Composition id: `F-NNN-<slug>` · 1080×1920 · 30fps · durationInFrames: <total>
 
 ## Design tokens
-- Fonts: <from 03-assets> · Colors: <hex set> · Motion signature: <configs>
+- Fonts: <from 03-assets> · Colors: <hex set + bg depth: gradient/glow> · Motion signature: <configs>
+- Persistent background layer (all frames): <gradient/glow/texture> — never flat single-hex black.
 
 ## Scenes (frame-exact)
+> Layout: use the FULL safe area y≈260–1660 in explicit bands (context = upper third · hero = center · supporting visual/timeline = lower third). Hero element dominates (primary numbers ≥ ~280px). Decorative layers visible at viewing size (thick bars/large shapes, not hairlines/tiny icons).
+
 ### Scene 0 — Hook (frames 0–45)
-- Text: "<exact>" · Font/size/color: … · Animation: <type, frames, easing/spring> · Layout: … · z: …
+- Text: "<exact>" · Font/size/color: … · Animation: <type, frames, easing/spring> · Layout (bands): … · z: …
+- Frame-fill note: <how the safe-area height is used; no dead zone >40%>
 ### Scene 1 — Beat 1 (frames 45–135)
-- …
+- … · Frame-fill note: …
 (continue for every beat + the loop-back; must tile to durationInFrames)
+(for any magnitude comparison: state the proportional positions computed FROM the values, or label the exaggeration; count-up displays clamp ≥ 0)
 
 ## Captions
 - Word-by-word, hand-timed. Per scene: words + their frame windows. Safe zone: bottom 15% / top clear.
