@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "order": [
     { "name": "hook", "from": 0 },
     { "name": "beat1", "from": 109 },
