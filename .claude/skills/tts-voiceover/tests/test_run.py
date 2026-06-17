@@ -78,9 +78,11 @@ class TestRunIntegration(unittest.TestCase):
             kio.synth_and_durations = orig
         self.assertGreater(out["total"], 0)
         self.assertTrue(os.path.isfile(os.path.join(d, "vo.wav")))
-        timing = json.load(open(os.path.join(d, "vo-timing.json")))
+        with open(os.path.join(d, "vo-timing.json")) as f:
+            timing = json.load(f)
         self.assertIn("envelope", timing)
-        self.assertIn("**Total**", open(script).read())
+        with open(script) as f:
+            self.assertIn("**Total**", f.read())
 
     def test_run_rejects_empty_narration(self):
         d = tempfile.mkdtemp()

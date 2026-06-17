@@ -35,5 +35,23 @@ class TestCheckAlignment(unittest.TestCase):
         self.assertFalse(r["ok"])
         self.assertTrue(any("token" in x for x in r["reasons"]))
 
+    def test_gapped_real_speech_passes(self):
+        # Realistic speech: words have inter-word pauses that belong to no word.
+        # Old summed-duration coverage false-aborted this; span coverage passes.
+        words, t = [], 0
+        for i in range(20):
+            words.append(_w(i, t, t + 7))   # ~0.23s word @30fps
+            t += 7 + 4                       # + ~0.13s gap
+        wav = words[-1]["end"]               # trimmed wav ends at last word
+        r = check_alignment(words, wav_len_frames=wav, n_tokens=20)
+        self.assertTrue(r["ok"], r["reasons"])
+
+    def test_one_frame_word_is_plausible(self):
+        # A short function word that rounds to a single frame must NOT be
+        # rejected (min_w lowered to 1; build_timing clamps a 0-frame -> 1).
+        words = [_w(0, 0, 10), _w(1, 10, 11), _w(2, 11, 21)]
+        r = check_alignment(words, wav_len_frames=21, n_tokens=3)
+        self.assertTrue(r["ok"], r["reasons"])
+
 if __name__ == "__main__":
     unittest.main()

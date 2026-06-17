@@ -185,8 +185,10 @@ After producing word frames (primary or fallback), `tts-voiceover` runs these ch
 trips the fallback aligner; a second failure aborts the run with a diagnostic** (never ships bad sync):
 
 1. **Monotonicity:** every `word.end ≥ word.start` and `word[i].start ≥ word[i-1].end`. Violation → fail.
-2. **Coverage:** `sum(word durations)` is within ±5% of the trimmed `vo.wav` length (frames). A large
-   gap means alignment dropped/merged words → fail.
+2. **Coverage:** the **speech span** `last_word.end − first_word.start` is within ±15% of the trimmed
+   `vo.wav` length (frames). (NOT the *sum* of per-word durations — natural speech has inter-word pauses
+   that belong to no word, so summed durations structurally undershoot the wav length and would
+   false-abort every real run. The span detects dropped/merged words, which is the real failure mode.)
 3. **Plausible word durations:** no word shorter than ~2 frames or longer than ~45 frames (≈0.07–1.5s)
    unless it's a known long token; outliers flag the line for fallback.
 4. **Token-count match:** number of aligned words == number of normalized spoken tokens. Mismatch

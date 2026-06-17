@@ -19,14 +19,27 @@ the VO-derived frame map into `02-script.md`. All timing logic is the bundled Py
 - The configured Kokoro voice NAME (default candidates: `am_michael` / `bm_george` / `af_bella`).
   Voices ship with the `kokoro` package; weights auto-download from Hugging Face (Apache-2.0).
 
+## Install (one-time, on the host where `/short` runs)
+```bash
+pip install kokoro misaki soundfile numpy   # Python TTS + G2P + WAV I/O (all required)
+sudo apt-get install -y espeak-ng ffmpeg     # phonemizer + audio (system)
+pip install aeneas                            # OPTIONAL: forced-alignment fallback (hard to build)
+```
+Kokoro-82M weights auto-download from Hugging Face on first run (Apache-2.0). `soundfile`/`numpy` are
+NOT optional — the primary synth path writes the WAV with them.
+
 ## Run
-1. Preflight: `python3 scripts/run.py` calls `preflight`; if Kokoro or the named voice is missing,
-   STOP and print the install steps (do not fake audio).
-2. `python3 scripts/run.py <run_dir> <voice_name>` →
-   normalizes numbers/abbrevs → Kokoro synth → trims silence → Kokoro-native word durations
-   (aeneas fallback; failure detector gates both) → writes `vo.wav`, `vo-timing.json` (integer
-   frames; `total` = durationInFrames; loop tail is a real beat entry), the ducking `envelope`, and
-   patches the frame map into `02-script.md`.
+The CLI preflights, then runs. On a missing dep / unknown voice it STOPS and prints exactly what to
+install (it does not fake audio):
+```bash
+python3 scripts/run.py <run_dir> [voice] [--fps 30] [--speed 1.0]
+# voice defaults to am_michael; candidates: am_michael / bm_george / af_bella
+# speed > 1.0 = faster/shorter (Kokoro convention)
+```
+Pipeline: normalize numbers/abbrevs → Kokoro synth → trim silence → Kokoro-native word durations
+(aeneas fallback; the §3.6 failure detector gates both) → write `vo.wav`, `vo-timing.json` (integer
+frames; `total` = durationInFrames; loop tail is a real beat entry), the ducking `envelope`, and
+patch the frame map into `02-script.md`.
 
 ## Output contract (`vo-timing.json`)
 Integer frames only. Keys: `fps, voice, speed, total, words[], beats[], speech_regions[],

@@ -4,6 +4,13 @@ import json
 import os
 import sys
 
+# Allow `python3 scripts/run.py ...` (the documented CLI): when run as a script,
+# Python puts scripts/ on sys.path, not the skill root, so `import scripts.X`
+# fails. Put the skill root (parent of scripts/) on the path first.
+if __package__ in (None, ""):
+    sys.path.insert(0,
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from scripts.normalize import normalize_narration
 from scripts.timing import build_timing
 from scripts.failure_detector import check_alignment
@@ -16,23 +23,31 @@ def align_with_fallback(primary, fallback, tokens, fps, wav_len_frames):
     wav_len_frames is a zero-arg callable returning the synthesized WAV length in
     frames (measured AFTER an aligner produced vo.wav). Returns the first aligner
     whose alignment passes check_alignment; a raising aligner counts as a failed
-    attempt (spec 3.6). Raises RuntimeError if neither works."""
-    for getter in (primary, fallback):
+    attempt (spec 3.6). Raises RuntimeError (carrying each aligner's actual cause,
+    so a missing-dep doesn't masquerade as a generic 'alignment failed') if
+    neither works."""
+    errors = []
+    for name, getter in (("primary", primary), ("fallback", fallback)):
         try:
             times = getter()
-        except Exception:
+        except Exception as e:
+            errors.append("%s raised: %s" % (name, e))
             continue
-        words = build_timing(times, tokens, fps=fps)["words"]
-        if check_alignment(words, wav_len_frames(), len(tokens))["ok"]:
+        res = check_alignment(build_timing(times, tokens, fps=fps)["words"],
+                              wav_len_frames(), len(tokens))
+        if res["ok"]:
             return times
-    raise RuntimeError("alignment failed on both primary and fallback")
+        errors.append("%s misaligned: %s" % (name, "; ".join(res["reasons"])))
+    raise RuntimeError("alignment failed on both primary and fallback -- "
+                       + " | ".join(errors))
 
 
 def _parse_narration(script_path):
     """Read the 'Narration' beats from 02-script.md between markers.
     Expects lines like '- [beat_id] spoken line text' under NARRATION:START."""
     import re
-    text = open(script_path).read()
+    with open(script_path) as f:
+        text = f.read()
     m = re.search(r"<!-- NARRATION:START -->(.*?)<!-- NARRATION:END -->",
                   text, re.DOTALL)
     if not m:
@@ -92,9 +107,37 @@ def run(run_dir, fps=30, voice=None, speed=1.0):
     return timing
 
 
-if __name__ == "__main__":
-    rd = sys.argv[1]
-    vp = sys.argv[2] if len(sys.argv) > 2 else None
-    out = run(rd, voice=vp)
+def _cli(argv=None):
+    import argparse
+    from scripts.kokoro_io import preflight, KNOWN_VOICES
+    p = argparse.ArgumentParser(
+        prog="run.py",
+        description="tts-voiceover (step 3.5): narration -> vo.wav + "
+                    "vo-timing.json + frame-map patch.")
+    p.add_argument("run_dir", help="run folder containing 02-script.md")
+    p.add_argument("voice", nargs="?", default="am_michael",
+                   help="Kokoro voice NAME (default: am_michael). "
+                        "e.g. am_michael / bm_george / af_bella")
+    p.add_argument("--fps", type=int, default=30, help="comp fps (default 30)")
+    p.add_argument("--speed", type=float, default=1.0,
+                   help="Kokoro speed; >1.0 = faster/shorter (default 1.0)")
+    args = p.parse_args(argv)
+
+    if args.voice not in KNOWN_VOICES:
+        p.error("unknown voice %r. Known voices: %s"
+                % (args.voice, ", ".join(sorted(KNOWN_VOICES))))
+
+    pf = preflight(args.voice, need_aligner=True)
+    if not pf["ok"]:
+        sys.stderr.write("tts-voiceover preflight failed -- install/fix:\n")
+        for m in pf["missing"]:
+            sys.stderr.write("  - %s\n" % m)
+        sys.exit(1)
+
+    out = run(args.run_dir, fps=args.fps, voice=args.voice, speed=args.speed)
     print("vo-timing.json total=%d frames, %d beats"
           % (out["total"], len(out["beats"])))
+
+
+if __name__ == "__main__":
+    _cli()

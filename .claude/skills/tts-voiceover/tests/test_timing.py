@@ -52,5 +52,25 @@ class TestBuildTiming(unittest.TestCase):
         self.assertEqual(t["voice"], "am_michael")
         self.assertEqual(t["speed"], 1.05)
 
+    def test_subframe_word_clamped_to_one_frame(self):
+        # "of" spans <1 frame: rounds to start==end (0f). Must clamp to 1f and
+        # stay monotonic so the detector doesn't reject it.
+        toks = _tokens([("a", "a", "h"), ("of", "of", "h"), ("them", "them", "h")])
+        t = build_timing([(0.0, 0.40), (0.40, 0.41), (0.50, 0.90)], toks, fps=30)
+        w = t["words"]
+        self.assertEqual(w[1]["start"], 12)
+        self.assertEqual(w[1]["end"], 13)            # 0-frame clamped to 1
+        self.assertGreaterEqual(w[2]["start"], w[1]["end"])  # still monotonic
+
+    def test_empty_and_single_word(self):
+        empty = build_timing([], [], fps=30, loop_tail_frames=75)
+        self.assertEqual(empty["total"], 75)
+        self.assertEqual(empty["words"], [])
+        self.assertEqual(empty["beats"][-1]["id"], "loop")
+        single = build_timing([(0.0, 0.40)],
+                              _tokens([("hi", "hi", "h")]), fps=30)
+        self.assertEqual(single["words"][0]["start"], 0)
+        self.assertEqual(single["beats"][-1]["end"], single["total"])
+
 if __name__ == "__main__":
     unittest.main()

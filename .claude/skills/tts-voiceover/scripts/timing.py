@@ -14,7 +14,14 @@ def build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75,
 
     gap_frames = _f(region_gap_ms / 1000.0, fps)
 
-    # 1) words: round once to integer frames, force first word start to 0.
+    # 1) words: round once to integer frames, force first word start to 0, and
+    #    apply ONLY the benign 0-frame floor (a sub-frame word rounds to
+    #    start==end; clamp end to start+1 so it has a real duration). We do NOT
+    #    repair monotonicity here: a genuine overlap (word starts before the
+    #    previous ends) must survive to check_alignment so the detector can trip
+    #    the fallback. The beat-boundary edge (a beat start jumping past a
+    #    contained word's frames) only arises from non-monotonic input, which
+    #    the detector catches -- so it never reaches a shipped timing contract.
     words = []
     for (s, e), tok in zip(word_times_s, tokens):
         words.append({"i": tok["i"], "display": tok["display"],
@@ -22,6 +29,9 @@ def build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75,
                       "end": _f(e, fps), "beat": tok["beat"], "region": None})
     if words:
         words[0]["start"] = 0
+    for w in words:
+        if w["end"] < w["start"] + 1:
+            w["end"] = w["start"] + 1
 
     # 2) speech regions: merge words whose inter-word gap < gap_frames.
     regions = []
