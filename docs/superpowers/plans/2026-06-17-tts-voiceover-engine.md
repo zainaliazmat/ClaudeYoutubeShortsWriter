@@ -1,3 +1,4 @@
+<!-- /autoplan restore point: /home/zain-ali/.gstack/projects/zainaliazmat-ClaudeYoutubeShortsWriter/fix-short-pipeline-visual-quality-autoplan-restore-20260617-180623.md -->
 # TTS Voiceover Engine Implementation Plan (Plan 1 of 3)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -6,7 +7,7 @@
 
 **Architecture:** A new project skill `.claude/skills/tts-voiceover/` bundling small, single-responsibility Python modules. ALL timing/normalization/envelope logic is **pure functions** (stdlib only) unit-tested without any TTS engine installed. The Kokoro/aeneas/ffmpeg calls are isolated in one thin I/O shell (`kokoro_io.py`) and one orchestrator (`run.py`), smoke-tested separately. Alignment is exact-by-construction from **Kokoro Python's native token timing**, with aeneas forced-alignment as the fallback; whisper is never used for timing.
 
-**Tech Stack:** Python 3 (stdlib only for pure logic — no pip deps), `unittest` for tests (zero install). Engine = **Kokoro-82M via the Python `kokoro` package** (Apache-2.0). External deps used ONLY in the I/O shell: `kokoro` + `misaki` (pip) + `espeak-ng` (system) for TTS, `aeneas` (fallback aligner), `ffmpeg` (silence-trim/WAV). See engine decision: `docs/superpowers/specs/2026-06-17-tts-engine-comparison-kokoro-vs-kokoro.md`.
+**Tech Stack:** Python 3 (stdlib only for pure logic — no pip deps), `unittest` for tests (zero install). Engine = **Kokoro-82M via the Python `kokoro` package** (Apache-2.0). External deps used ONLY in the I/O shell: `kokoro` + `misaki` (pip) + `espeak-ng` (system) for TTS, `aeneas` (fallback aligner), `ffmpeg` (silence-trim/WAV). See engine decision: `docs/superpowers/specs/2026-06-17-tts-engine-comparison-piper-vs-kokoro.md`.
 
 ## Global Constraints
 
