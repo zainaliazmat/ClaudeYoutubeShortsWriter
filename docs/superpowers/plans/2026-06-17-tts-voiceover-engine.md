@@ -4,9 +4,9 @@
 
 **Goal:** Build the `tts-voiceover` engine that turns a beat-grouped narration script into `vo.wav`, a `vo-timing.json` timing contract (integer frames only), a VO-derived frame map, and a deterministic music-ducking envelope.
 
-**Architecture:** A new project skill `.claude/skills/tts-voiceover/` bundling small, single-responsibility Python modules. ALL timing/normalization/envelope logic is **pure functions** (stdlib only) unit-tested without any TTS binary. Piper/aeneas/ffmpeg are isolated in one thin I/O shell (`piper_io.py`) and one orchestrator (`run.py`), smoke-tested separately. Alignment is exact-by-construction from Piper's phoneme durations, with aeneas forced-alignment as the fallback; whisper is never used for timing.
+**Architecture:** A new project skill `.claude/skills/tts-voiceover/` bundling small, single-responsibility Python modules. ALL timing/normalization/envelope logic is **pure functions** (stdlib only) unit-tested without any TTS engine installed. The Kokoro/aeneas/ffmpeg calls are isolated in one thin I/O shell (`kokoro_io.py`) and one orchestrator (`run.py`), smoke-tested separately. Alignment is exact-by-construction from **Kokoro Python's native token timing**, with aeneas forced-alignment as the fallback; whisper is never used for timing.
 
-**Tech Stack:** Python 3 (stdlib only for pure logic — no pip deps), `unittest` for tests (zero install). External binaries used ONLY in the I/O shell: `piper` (TTS), `aeneas` (fallback aligner), `ffmpeg` (silence-trim).
+**Tech Stack:** Python 3 (stdlib only for pure logic — no pip deps), `unittest` for tests (zero install). Engine = **Kokoro-82M via the Python `kokoro` package** (Apache-2.0). External deps used ONLY in the I/O shell: `kokoro` + `misaki` (pip) + `espeak-ng` (system) for TTS, `aeneas` (fallback aligner), `ffmpeg` (silence-trim/WAV). See engine decision: `docs/superpowers/specs/2026-06-17-tts-engine-comparison-kokoro-vs-kokoro.md`.
 
 ## Global Constraints
 
@@ -82,7 +82,7 @@ git commit -m "feat(tts): scaffold tts-voiceover skill package + test discovery"
   - `normalize_narration(beats: list[dict]) -> dict` where each input beat is
     `{"id": str, "lines": list[str]}`. Returns
     `{"spoken_text": str, "tokens": [{"i": int, "spoken": str, "display": str, "beat": str}]}`.
-    `spoken_text` is the full string Piper speaks (normalized, space-joined). `tokens` is the
+    `spoken_text` is the full string Kokoro speaks (normalized, space-joined). `tokens` is the
     per-spoken-word list with each word's original display string and beat id.
 
 - [ ] **Step 1: Write the failing tests**
@@ -225,9 +225,9 @@ git commit -m "feat(tts): text normalization (numbers/abbrevs -> spoken, beat ma
 **Interfaces:**
 - Consumes: `tokens` from `normalize_narration` (each `{"i","spoken","display","beat"}`).
 - Produces:
-  `build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75, region_gap_ms=300, voice="", length_scale=1.0) -> dict`
-  - `word_times_s`: list of `(start_s, end_s)` floats, parallel to `tokens` (from Piper durations or aeneas).
-  - Returns the `vo-timing.json` dict: keys `fps, voice, length_scale, total, words, beats, speech_regions`.
+  `build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75, region_gap_ms=300, voice="", speed=1.0) -> dict`
+  - `word_times_s`: list of `(start_s, end_s)` floats, parallel to `tokens` (from Kokoro durations or aeneas).
+  - Returns the `vo-timing.json` dict: keys `fps, voice, speed, total, words, beats, speech_regions`.
   - `words[i]` = `{"i","display","spoken","start","end","beat","region"}` (frames, ints).
   - `beats[]` contiguous `{"id","start","end"}`, first `start==0`, each `start==prev.end`, last entry is the loop tail with no words.
   - `speech_regions[]` = merged spans `{"start","end"}` (gap < region_gap merged).
@@ -284,11 +284,11 @@ class TestBuildTiming(unittest.TestCase):
         self.assertEqual([w["region"] for w in t["words"]], [0, 0, 1])
 
     def test_metadata_passthrough(self):
-        t = build_timing(self.times, self.tokens, fps=30, voice="en_US-ryan-high",
-                         length_scale=0.97)
+        t = build_timing(self.times, self.tokens, fps=30, voice="am_michael",
+                         speed=1.05)
         self.assertEqual(t["fps"], 30)
-        self.assertEqual(t["voice"], "en_US-ryan-high")
-        self.assertEqual(t["length_scale"], 0.97)
+        self.assertEqual(t["voice"], "am_michael")
+        self.assertEqual(t["speed"], 1.05)
 
 if __name__ == "__main__":
     unittest.main()
@@ -312,7 +312,7 @@ def _f(seconds, fps):
 
 
 def build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75,
-                 region_gap_ms=300, voice="", length_scale=1.0):
+                 region_gap_ms=300, voice="", speed=1.0):
     if len(word_times_s) != len(tokens):
         raise ValueError("word_times_s (%d) and tokens (%d) must align"
                          % (len(word_times_s), len(tokens)))
@@ -354,7 +354,7 @@ def build_timing(word_times_s, tokens, fps=30, loop_tail_frames=75,
     total = last_word_end + loop_tail_frames
     beats.append({"id": "loop", "start": last_word_end, "end": total})
 
-    return {"fps": fps, "voice": voice, "length_scale": length_scale,
+    return {"fps": fps, "voice": voice, "speed": speed,
             "total": total, "words": words, "beats": beats,
             "speech_regions": regions}
 ```
@@ -678,44 +678,53 @@ git commit -m "feat(tts): frame-map table render + marker-based script patch"
 
 ---
 
-### Task 7: I/O shell (`piper_io.py`) — Piper synth, silence-trim, durations, aeneas fallback
+### Task 7: I/O shell (`kokoro_io.py`) — Kokoro synth, silence-trim, durations, aeneas fallback
 
 **Files:**
-- Create: `.claude/skills/tts-voiceover/scripts/piper_io.py`
-- Test: `.claude/skills/tts-voiceover/tests/test_piper_io.py`
+- Create: `.claude/skills/tts-voiceover/scripts/kokoro_io.py`
+- Test: `.claude/skills/tts-voiceover/tests/test_kokoro_io.py`
 
 **Interfaces:**
-- Consumes: normalized `spoken_text`, `voice`, `length_scale`, output paths.
+- Consumes: normalized `spoken_text`, `voice` (a NAME like `am_michael`), `speed`, output paths.
 - Produces:
-  - `preflight(voice_path, need_aligner) -> dict` → `{"ok": bool, "missing": [str]}`. Checks `piper`
-    on PATH, the **named** voice file exists, `ffmpeg` present, and (if `need_aligner`) `aeneas`
-    importable.
-  - `synth_and_durations(spoken_text, voice_path, length_scale, out_wav) -> list[tuple]` → writes
-    silence-trimmed `out_wav` and returns per-word `(start_s, end_s)` from Piper phoneme durations;
-    raises `PiperUnavailable` if Piper can't run (caller falls back to `aeneas_align`).
+  - `KNOWN_VOICES: set[str]` — the bundled Kokoro English voice names (testable without the engine).
+  - `preflight(voice, need_aligner) -> dict` → `{"ok": bool, "missing": [str]}`. Checks the `kokoro`
+    package imports, `espeak-ng` on PATH, `voice in KNOWN_VOICES`, `ffmpeg` present, and (if
+    `need_aligner`) `aeneas` importable.
+  - `synth_and_durations(spoken_text, voice, speed, out_wav) -> list[tuple]` → runs Python Kokoro,
+    writes a silence-trimmed `out_wav`, returns per-WORD `(start_s, end_s)` from Kokoro's **native
+    token timestamps**; raises `KokoroUnavailable` if kokoro/soundfile/timestamps aren't available
+    (caller falls back to `aeneas_align`).
   - `aeneas_align(spoken_text, wav_path) -> list[tuple]` → per-word `(start_s, end_s)` via aeneas.
-- Note: this module shells out to binaries, so only `preflight`'s pure branches are unit-tested here;
+- Note: only `preflight`'s pure branches + `KNOWN_VOICES` are unit-tested here (no engine needed);
   `synth_and_durations`/`aeneas_align` are exercised by the Task 9 gated smoke test.
+- ⚠️ **Known-unknown:** Kokoro's token-timing attribute names (`start_ts`/`end_ts`) and token→word
+  granularity vary by `kokoro` version — verify against the installed build in the Task 9 e2e test and
+  adjust, keeping the returned `(start_s, end_s)` per-word contract. The §3.6 failure detector +
+  aeneas fallback cover a mismatch.
 
-- [ ] **Step 1: Write the failing test (preflight detection is unit-testable via PATH)**
+- [ ] **Step 1: Write the failing test (preflight + KNOWN_VOICES are unit-testable without the engine)**
 
-`.claude/skills/tts-voiceover/tests/test_piper_io.py`:
+`.claude/skills/tts-voiceover/tests/test_kokoro_io.py`:
 ```python
-import os
-import tempfile
 import unittest
-from scripts.piper_io import preflight
+from scripts.kokoro_io import preflight, KNOWN_VOICES
 
 class TestPreflight(unittest.TestCase):
-    def test_missing_voice_file_reported(self):
-        r = preflight(voice_path="/no/such/voice.onnx", need_aligner=False)
+    def test_unknown_voice_reported(self):
+        r = preflight(voice="not_a_real_voice", need_aligner=False)
         self.assertFalse(r["ok"])
         self.assertTrue(any("voice" in m for m in r["missing"]))
 
-    def test_existing_voice_file_not_in_missing(self):
-        with tempfile.NamedTemporaryFile(suffix=".onnx") as f:
-            r = preflight(voice_path=f.name, need_aligner=False)
-            self.assertFalse(any("voice file" in m for m in r["missing"]))
+    def test_known_voice_not_flagged_unknown(self):
+        v = sorted(KNOWN_VOICES)[0]
+        r = preflight(voice=v, need_aligner=False)
+        self.assertFalse(any("unknown voice" in m for m in r["missing"]))
+
+    def test_known_voices_include_defaults(self):
+        self.assertIn("am_michael", KNOWN_VOICES)
+        self.assertIn("bm_george", KNOWN_VOICES)
+        self.assertIn("af_bella", KNOWN_VOICES)
 
 if __name__ == "__main__":
     unittest.main()
@@ -723,32 +732,45 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cd .claude/skills/tts-voiceover && python3 -m unittest tests.test_piper_io -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'scripts.piper_io'`.
+Run: `cd .claude/skills/tts-voiceover && python3 -m unittest tests.test_kokoro_io -v`
+Expected: FAIL — `ModuleNotFoundError: No module named 'scripts.kokoro_io'`.
 
 - [ ] **Step 3: Write the implementation**
 
-`.claude/skills/tts-voiceover/scripts/piper_io.py`:
+`.claude/skills/tts-voiceover/scripts/kokoro_io.py`:
 ```python
-"""Thin I/O shell around piper / ffmpeg / aeneas. The pure timing logic lives
-elsewhere; this file is the only place that touches external binaries."""
-import json
+"""Thin I/O shell around Python `kokoro` / ffmpeg / aeneas. The pure timing
+logic lives elsewhere; this is the ONLY module that imports the TTS engine."""
 import os
 import shutil
 import subprocess
 import tempfile
 
+# Kokoro-82M v1.0 bundled English voices (subset we use; full list in HF VOICES.md).
+KNOWN_VOICES = {
+    "af_heart", "af_bella", "af_nicole", "af_sarah", "af_sky", "af_alloy",
+    "af_aoede", "af_jessica", "af_kore", "af_nova", "af_river",
+    "am_michael", "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam",
+    "am_onyx", "am_puck", "am_santa",
+    "bf_emma", "bf_alice", "bf_isabella", "bf_lily",
+    "bm_george", "bm_daniel", "bm_fable", "bm_lewis",
+}
 
-class PiperUnavailable(Exception):
+
+class KokoroUnavailable(Exception):
     pass
 
 
-def preflight(voice_path, need_aligner):
+def preflight(voice, need_aligner):
     missing = []
-    if shutil.which("piper") is None:
-        missing.append("piper not on PATH (install piper-tts)")
-    if not os.path.isfile(voice_path):
-        missing.append("voice file not found: %s" % voice_path)
+    try:
+        import kokoro  # noqa: F401
+    except Exception:
+        missing.append("kokoro not importable (pip install kokoro misaki)")
+    if shutil.which("espeak-ng") is None and shutil.which("espeak") is None:
+        missing.append("espeak-ng not on PATH (phonemizer)")
+    if voice not in KNOWN_VOICES:
+        missing.append("unknown voice: %s" % voice)
     if shutil.which("ffmpeg") is None:
         missing.append("ffmpeg not on PATH")
     if need_aligner:
@@ -759,27 +781,40 @@ def preflight(voice_path, need_aligner):
     return {"ok": len(missing) == 0, "missing": missing}
 
 
-def synth_and_durations(spoken_text, voice_path, length_scale, out_wav):
-    """Synthesize with Piper (JSON output incl. phoneme alignments), trim
-    leading/trailing silence, return per-word (start_s, end_s)."""
-    if shutil.which("piper") is None:
-        raise PiperUnavailable("piper not on PATH")
+def synth_and_durations(spoken_text, voice, speed, out_wav):
+    """Synthesize with Python Kokoro, collecting native per-token timestamps;
+    write a silence-trimmed out_wav; return per-WORD (start_s, end_s).
+    Raises KokoroUnavailable if kokoro/soundfile/timestamps aren't available."""
+    try:
+        from kokoro import KPipeline
+        import soundfile as sf
+        import numpy as np
+    except Exception as e:
+        raise KokoroUnavailable("kokoro/soundfile unavailable: %s" % e)
+
+    lang = voice[0]   # 'a' = American, 'b' = British English (Kokoro convention)
+    pipeline = KPipeline(lang_code=lang)
+    sr = 24000
+    chunks, words, base = [], [], 0.0
+    for result in pipeline(spoken_text, voice=voice, speed=speed):
+        audio = getattr(result, "audio", None)
+        toks = getattr(result, "tokens", None)
+        if audio is None or not toks:
+            raise KokoroUnavailable("kokoro returned no audio+token timing")
+        a = audio.detach().cpu().numpy() if hasattr(audio, "detach") \
+            else np.asarray(audio)
+        for t in toks:
+            ts, te = getattr(t, "start_ts", None), getattr(t, "end_ts", None)
+            if ts is None or te is None:
+                raise KokoroUnavailable("kokoro token missing start_ts/end_ts")
+            words.append((base + float(ts), base + float(te)))
+        chunks.append(a)
+        base += len(a) / float(sr)
+
     raw = out_wav + ".raw.wav"
-    align_json = out_wav + ".align.json"
-    # Piper writes alignment when --output_file + --json-input style is used;
-    # builds expose phoneme/word durations in a sidecar JSON. If absent, raise.
-    proc = subprocess.run(
-        ["piper", "--model", voice_path, "--length_scale", str(length_scale),
-         "--output_file", raw, "--json-output", align_json],
-        input=spoken_text.encode("utf-8"),
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if proc.returncode != 0 or not os.path.isfile(align_json):
-        raise PiperUnavailable("piper did not emit word alignments")
-    with open(align_json) as f:
-        data = json.load(f)
-    # Trim silence to file out_wav; offset all times by the trimmed lead.
+    sf.write(raw, np.concatenate(chunks), sr)
     lead = _trim_silence(raw, out_wav)
-    return [(w["start"] - lead, w["end"] - lead) for w in data["words"]]
+    return [(s - lead, e - lead) for (s, e) in words]
 
 
 def _trim_silence(in_wav, out_wav):
@@ -825,14 +860,14 @@ def aeneas_align(spoken_text, wav_path):
 
 - [ ] **Step 4: Run to verify pass**
 
-Run: `cd .claude/skills/tts-voiceover && python3 -m unittest tests.test_piper_io -v`
+Run: `cd .claude/skills/tts-voiceover && python3 -m unittest tests.test_kokoro_io -v`
 Expected: both tests PASS — `OK`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .claude/skills/tts-voiceover/scripts/piper_io.py .claude/skills/tts-voiceover/tests/test_piper_io.py
-git commit -m "feat(tts): piper/ffmpeg/aeneas I/O shell + preflight"
+git add .claude/skills/tts-voiceover/scripts/kokoro_io.py .claude/skills/tts-voiceover/tests/test_kokoro_io.py
+git commit -m "feat(tts): kokoro/ffmpeg/aeneas I/O shell + preflight"
 ```
 
 ---
@@ -846,11 +881,11 @@ git commit -m "feat(tts): piper/ffmpeg/aeneas I/O shell + preflight"
 **Interfaces:**
 - Consumes: all prior modules.
 - Produces:
-  - `align_with_fallback(spoken_text, tokens, voice_path, length_scale, out_wav, wav_len_frames_fn) -> list[tuple]`
-    — try Piper-native durations; run `check_alignment`; on failure run `aeneas_align` and re-check;
+  - `align_with_fallback(spoken_text, tokens, voice_path, speed, out_wav, wav_len_frames_fn) -> list[tuple]`
+    — try Kokoro-native durations; run `check_alignment`; on failure run `aeneas_align` and re-check;
     raise `RuntimeError` if both fail. (Pure-ish: takes the two aligner callables + the detector via
     injection so it is unit-testable WITHOUT binaries.)
-  - `run(run_dir, fps=30, voice_path=..., length_scale=1.0) -> dict` — full pipeline writing
+  - `run(run_dir, fps=30, voice_path=..., speed=1.0) -> dict` — full pipeline writing
     `vo.wav` + `vo-timing.json`, patching `02-script.md`. CLI: `python3 run.py <run_dir> [voice_path]`.
 
 - [ ] **Step 1: Write the failing test (inject fake aligners to test the fallback decision without binaries)**
@@ -943,9 +978,9 @@ def _parse_narration(script_path):
     return beats
 
 
-def run(run_dir, fps=30, voice_path=None, length_scale=1.0):
-    from scripts.piper_io import (synth_and_durations, aeneas_align,
-                                  PiperUnavailable)
+def run(run_dir, fps=30, voice_path=None, speed=1.0):
+    from scripts.kokoro_io import (synth_and_durations, aeneas_align,
+                                  KokoroUnavailable)
     script_path = os.path.join(run_dir, "02-script.md")
     out_wav = os.path.join(run_dir, "vo.wav")
 
@@ -959,22 +994,22 @@ def run(run_dir, fps=30, voice_path=None, length_scale=1.0):
             return int(round(w.getnframes() / w.getframerate() * fps))
 
     def primary():
-        return synth_and_durations(spoken, voice_path, length_scale, out_wav)
+        return synth_and_durations(spoken, voice_path, speed, out_wav)
 
     def fallback():
         if not os.path.isfile(out_wav):
-            raise RuntimeError("no vo.wav for aeneas fallback (piper failed)")
+            raise RuntimeError("no vo.wav for aeneas fallback (kokoro failed)")
         return aeneas_align(spoken, out_wav)
 
     try:
         prim = primary
-    except PiperUnavailable:
-        prim = lambda: (_ for _ in ()).throw(RuntimeError("piper unavailable"))
+    except KokoroUnavailable:
+        prim = lambda: (_ for _ in ()).throw(RuntimeError("kokoro unavailable"))
 
     times = align_with_fallback(prim, fallback, tokens, fps, _wav_len_frames())
 
     timing = build_timing(times, tokens, fps=fps, voice=voice_path or "",
-                          length_scale=length_scale)
+                          speed=speed)
     timing["envelope"] = build_duck_envelope(timing["speech_regions"],
                                              timing["total"])
     with open(os.path.join(run_dir, "vo-timing.json"), "w") as f:
@@ -1022,23 +1057,21 @@ git commit -m "feat(tts): orchestrator + CLI (align-with-fallback, write timing,
 **Interfaces:**
 - Consumes: the CLI `run()`.
 - Produces: the skill's markdown I/O contract (for pipeline step 3.5) and a real-binary smoke test
-  that **skips** when Piper/voice aren't installed (so CI/dev without binaries stays green).
+  that **skips** when Kokoro/voice aren't installed (so CI/dev without binaries stays green).
 
 - [ ] **Step 1: Write the gated smoke test**
 
 `.claude/skills/tts-voiceover/tests/test_e2e_gated.py`:
 ```python
 import os
-import shutil
 import tempfile
 import unittest
-from scripts.piper_io import preflight
+from scripts.kokoro_io import preflight
 
-VOICE = os.environ.get("PIPER_VOICE", "")
+VOICE = os.environ.get("KOKORO_VOICE", "am_michael")
 
-@unittest.skipUnless(VOICE and shutil.which("piper")
-                     and preflight(VOICE, need_aligner=False)["ok"],
-                     "piper + PIPER_VOICE not installed; skipping e2e")
+@unittest.skipUnless(preflight(VOICE, need_aligner=False)["ok"],
+                     "kokoro/espeak-ng/voice not installed; skipping e2e")
 class TestE2E(unittest.TestCase):
     def test_run_produces_timing_and_patches_script(self):
         from scripts.run import run
@@ -1058,10 +1091,10 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Run it — verify it SKIPS cleanly without Piper**
+- [ ] **Step 2: Run it — verify it SKIPS cleanly without Kokoro**
 
 Run: `cd .claude/skills/tts-voiceover && python3 -m unittest tests.test_e2e_gated -v`
-Expected: `skipped 'piper + PIPER_VOICE not installed; skipping e2e'` — `OK (skipped=1)`.
+Expected: `skipped 'kokoro + KOKORO_VOICE not installed; skipping e2e'` — `OK (skipped=1)`.
 
 - [ ] **Step 3: Write `SKILL.md` (the pipeline step-3.5 contract)**
 
@@ -1069,9 +1102,9 @@ Expected: `skipped 'piper + PIPER_VOICE not installed; skipping e2e'` — `OK (s
 ```markdown
 ---
 name: tts-voiceover
-description: Generates the spoken voiceover for a Short and derives the VO-driven timing. Use as STEP 3.5 of the /short pipeline (after the writer, before asset-sourcing). Reads the Narration block in 02-script.md, runs local Piper TTS, derives an integer-frame timing contract (vo-timing.json), writes the VO-derived frame map back into 02-script.md, and emits a music-ducking envelope. Local + free; no API keys.
+description: Generates the spoken voiceover for a Short and derives the VO-driven timing. Use as STEP 3.5 of the /short pipeline (after the writer, before asset-sourcing). Reads the Narration block in 02-script.md, runs local Kokoro TTS, derives an integer-frame timing contract (vo-timing.json), writes the VO-derived frame map back into 02-script.md, and emits a music-ducking envelope. Local + free; no API keys.
 version: 1.0.0
-allowed-tools: Read, Write, Edit, Bash(python3 *), Bash(piper:*), Bash(ffmpeg:*)
+allowed-tools: Read, Write, Edit, Bash(python3 *), Bash(ffmpeg:*), Bash(espeak-ng:*)
 user-invocable: false
 ---
 
@@ -1079,26 +1112,26 @@ user-invocable: false
 
 Step 3.5 of `/short`. Turns the writer's **Narration** into `vo.wav` + `vo-timing.json`, then writes
 the VO-derived frame map into `02-script.md`. All timing logic is the bundled Python in `scripts/`
-(unit-tested, stdlib-only); Piper/aeneas/ffmpeg are invoked only by `piper_io.py`.
+(unit-tested, stdlib-only); Kokoro/aeneas/ffmpeg are invoked only by `kokoro_io.py`.
 
 ## Inputs
 - Run folder `output/F-NNN-<slug>/` with `02-script.md` containing a Narration block between
   `<!-- NARRATION:START -->` / `<!-- NARRATION:END -->` (lines `- [beat_id] spoken line`) and an
   empty frame-map block between `<!-- FRAME-MAP:START -->` / `<!-- FRAME-MAP:END -->`.
-- The configured Piper voice `.onnx` (default candidates: en_US-ryan-high / en_GB-alan-medium /
-  en_US-amy-medium).
+- The configured Kokoro voice NAME (default candidates: `am_michael` / `bm_george` / `af_bella`).
+  Voices ship with the `kokoro` package; weights auto-download from Hugging Face (Apache-2.0).
 
 ## Run
-1. Preflight: `python3 scripts/run.py` calls `preflight`; if Piper or the named voice is missing,
+1. Preflight: `python3 scripts/run.py` calls `preflight`; if Kokoro or the named voice is missing,
    STOP and print the install steps (do not fake audio).
 2. `python3 scripts/run.py <run_dir> <voice_path>` →
-   normalizes numbers/abbrevs → Piper synth → trims silence → Piper-native word durations
+   normalizes numbers/abbrevs → Kokoro synth → trims silence → Kokoro-native word durations
    (aeneas fallback; failure detector gates both) → writes `vo.wav`, `vo-timing.json` (integer
    frames; `total` = durationInFrames; loop tail is a real beat entry), the ducking `envelope`, and
    patches the frame map into `02-script.md`.
 
 ## Output contract (`vo-timing.json`)
-Integer frames only. Keys: `fps, voice, length_scale, total, words[], beats[], speech_regions[],
+Integer frames only. Keys: `fps, voice, speed, total, words[], beats[], speech_regions[],
 envelope[]`. Downstream (`remotion-prompt-generator`, the validator) read frames from here — never
 re-round from seconds.
 
@@ -1109,7 +1142,7 @@ re-round from seconds.
 
 ## Tests
 `cd .claude/skills/tts-voiceover && python3 -m unittest discover -s tests -v`
-(The e2e test self-skips unless `PIPER_VOICE` + `piper` are installed.)
+(The e2e test self-skips unless `KOKORO_VOICE` + `kokoro` are installed.)
 ```
 
 - [ ] **Step 4: Run the full suite once more**
@@ -1134,7 +1167,7 @@ git commit -m "feat(tts): SKILL.md step-3.5 contract + gated end-to-end smoke te
 |---|---|
 | §3.3 step 1–2 normalization | Task 2 |
 | §3.3 step 3 silence-trim | Task 7 (`_trim_silence`) |
-| §3.3 step 4 exact alignment (Piper-native primary, aeneas fallback, no whisper) | Task 7 + Task 8 (`align_with_fallback`) |
+| §3.3 step 4 exact alignment (Kokoro-native primary, aeneas fallback, no whisper) | Task 7 + Task 8 (`align_with_fallback`) |
 | §3.3 step 5 round-to-frames-once | Task 3 (`build_timing`) |
 | §3.3 step 6 derive frame map + loop tail entry | Task 3 + Task 6 |
 | §3.3 step 7 patch 02-script.md | Task 6 + Task 8 |
@@ -1156,9 +1189,11 @@ signature matches its callers in Task 8. `check_alignment(words, wav_len_frames,
 Task 4 def and Task 8 call. `render_frame_map_table(beats)` / `patch_script_frame_map(text, table)`
 match Tasks 6 and 8. Envelope keyframe shape `{"frame","vol"}` consistent (Task 5, consumed Task 8).
 
-**Risk note for the implementer:** Task 7's exact Piper CLI flags (`--json-output`/`--length_scale`)
-vary by Piper build. The unit tests don't depend on them; the **gated e2e test (Task 9) is where you
-verify the real flags** — adjust `synth_and_durations` to your installed Piper's alignment-output
-flag, keeping the returned `(start_s, end_s)` contract. If your build can't emit word alignments,
-the aeneas fallback path carries it.
+**Risk note for the implementer:** Task 7's Kokoro **Python API token-timing attributes**
+(`result.tokens`, each token's `start_ts`/`end_ts`) and token→word granularity vary by `kokoro`
+version. The unit tests don't depend on them; the **gated e2e test (Task 9) is where you verify the
+real API** — adjust `synth_and_durations` to the installed `kokoro`'s token-timing shape, keeping the
+returned per-word `(start_s, end_s)` contract. If the build's native timing isn't granular enough,
+the aeneas fallback path (gated by the §3.6 failure detector) carries it. Also note `soundfile` +
+`numpy` are needed to write the WAV (`pip install soundfile numpy`).
 ```

@@ -1,4 +1,4 @@
-# Design — TTS Voiceover for the `/short` Pipeline (VO-driven, local Piper)
+# Design — TTS Voiceover for the `/short` Pipeline (VO-driven, local Kokoro)
 
 **Date:** 2026-06-17 · **Status:** approved (design), pending spec review
 **Driver:** F-001 v3 rendered well visually but feels empty/silent without narration. Decision: adopt TTS as the **channel default**, and add denser per-beat visuals at the same length.
@@ -18,7 +18,7 @@ kinetic typography synced to the voice. After this change:
 - AI-disclosure is set to **YES** (synthetic voice) on every upload.
 - F-001 is regenerated as **v4** through the new flow, with denser visuals (~30s).
 
-**Success = F-001 v4 renders with a clear Piper narration, captions popping word-by-word in sync,
+**Success = F-001 v4 renders with a clear Kokoro narration, captions popping word-by-word in sync,
 music tastefully under the voice, render-qa PASS, and the pipeline docs/skills updated so the next
 `/short` does this by default.**
 
@@ -28,12 +28,12 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| TTS engine | **Piper** (local, OSS, no API key) | Free, offline, fully automatable; fits the no-paid-API ethos |
+| TTS engine | **Kokoro** (local, OSS, no API key) | Free, offline, fully automatable; fits the no-paid-API ethos |
 | Timing model | **VO drives the frame map** | Natural pacing; voice is the spine, visuals sync to it |
-| Generation location | **Inside the `/short` run** | Pipeline now produces `vo.wav`; needs Piper + aligner on the host |
-| Voice | **Pick from 2–3 Piper samples at build time** | Candidates: `en_US-ryan-high`, `en_GB-alan-medium`, `en_US-amy-medium`; swappable later |
+| Generation location | **Inside the `/short` run** | Pipeline now produces `vo.wav`; needs Kokoro + aligner on the host |
+| Voice | **Pick from 2–3 Kokoro samples at build time** | Candidates: `am_michael` (US male), `bm_george` (UK male), `af_bella` (US female); voice is a NAME string, not a file; swappable later. NOTE: engine = Kokoro-82M via Python `kokoro` (Apache-2.0); see `2026-06-17-tts-engine-comparison-piper-vs-kokoro.md` |
 | Music bed | **Ducks under VO** (~0.72 → ~0.22 during speech) | VO is now the lead, reversing the old no-VO rule |
-| Captions | **Word-by-word synced to VO** via exact alignment | **Piper-native phoneme durations** (primary, exact-by-construction); `aeneas` forced-alignment fallback; whisper NOT used for timing (§3.3) |
+| Captions | **Word-by-word synced to VO** via exact alignment | **Kokoro Python native token timing** (primary, exact-by-construction); `aeneas` forced-alignment fallback; whisper NOT used for timing (§3.3) |
 | AI disclosure | **YES** (altered/synthetic content) | Synthetic voice is no longer script-only-AI exempt |
 | Content | **Denser visuals, ~same length (~30s)** | Narration sized to ~28–32s; add date ticks/era labels/stronger comparison |
 
@@ -44,7 +44,7 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 ### 3.1 New & changed components
 
 - **NEW skill `tts-voiceover`** (single purpose, the heart of this change). Owns: take the narration
-  script → run Piper → run `whisper.cpp` forced alignment → emit `vo.wav` + `vo-timing.json`
+  script → run Kokoro (Python `kokoro`) → read its native token timing → emit `vo.wav` + `vo-timing.json`
   (word + line timestamps) → **derive the frame map** and write it back into `02-script.md`. Inputs:
   run folder, `02-script.md` (narration section), chosen voice + speaking rate. Outputs: `vo.wav`,
   `vo-timing.json`, updated `02-script.md` frame map.
@@ -81,7 +81,7 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 3  writer            → 02-script.md  (NOW includes a Narration script + on-screen text + visual dir;
                                        frame map left as a TARGET, finalized in 3.5)
 3.5 tts-voiceover    → vo.wav + vo-timing.json; writes the FINAL frame map into 02-script.md
-       (OVERRUN EDGE: if measured VO > target+~15% and length_scale can't close it without
+       (OVERRUN EDGE: if measured VO > target+~15% and `speed` can't close it without
         sounding robotic, LOOP BACK to step 3 to cut words — a real cycle, not a linear hop.)
 4  asset-sourcing    → 03-assets.md (denser visuals) + 04-audio.md (music DUCKED under VO + SFX)
 5  prompt-generator  → 05-remotion-prompt.md (vo.wav lead + ducked music + SFX; captions from timing)
@@ -90,9 +90,10 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 8  render-qa (post-render) → 08-render-qa.md (adds the VO check)
 ```
 
-> **`length_scale` direction (corrected):** Piper `length_scale > 1.0` = *slower/longer*; `< 1.0` =
-> *faster/shorter*. So an OVERRUN is closed by *lowering* length_scale toward ~0.95 or cutting words;
-> an UNDERRUN by raising it. Past ~0.9 it gets robotic → persistent overrun must cut words (3.5→3).
+> **`speed` direction (Kokoro):** Kokoro's `speed > 1.0` = *faster/shorter*; `< 1.0` = *slower/longer*
+> (this is the OPPOSITE of Piper's `length_scale`). So an OVERRUN is closed by *raising* `speed` toward
+> ~1.1 or cutting words; an UNDERRUN by lowering it. Past ~1.15 it gets unnatural → persistent overrun
+> must cut words (3.5→3).
 
 ### 3.3 Data flow for VO-driven timing (the core mechanism)
 
@@ -100,16 +101,17 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
    are written in a **TTS-friendly spoken form** OR flagged so step 2 can normalize them (see §3.6).
 2. **Normalize (in `tts-voiceover`):** expand numbers/abbreviations to their spoken token form
    (`450`→"four hundred fifty", `1969`→"nineteen sixty-nine", `BCE`→"B C E") and keep a map from each
-   spoken token back to its beat + on-screen display string. This normalized text is BOTH what Piper
+   spoken token back to its beat + on-screen display string. This normalized text is BOTH what Kokoro
    speaks AND the alignment target — so token counts match by construction.
-3. **Synthesize:** Piper → raw WAV (voice + `length_scale`). **Trim leading/trailing silence**
-   (Piper emits ~80–200ms lead-in) to produce `vo.wav`, so `t=0` of `vo.wav` is the first phoneme and
-   audio agrees with the frame map from frame 0.
+3. **Synthesize:** Kokoro (Python `kokoro`, voice name + `speed`) → raw WAV. **Trim leading/trailing
+   silence** (TTS emits a short lead-in) to produce `vo.wav`, so `t=0` of `vo.wav` is the first phoneme
+   and audio agrees with the frame map from frame 0.
 4. **Align (exact-by-construction, not ASR):**
-   - **Primary — Piper-native durations:** Piper's duration predictor knows each phoneme's length
-     because it generated them; sum phoneme→word to get exact word `[start,end]`. No guessing.
-   - **Fallback — `aeneas` forced alignment** of the normalized text against `vo.wav` (DTW) if native
-     durations aren't exposed by the installed Piper build.
+   - **Primary — Kokoro native token timing:** the Python `kokoro` pipeline exposes per-token timing
+     fields during synthesis; map tokens→words to get exact word `[start,end]`. No guessing. (Confirm
+     granularity is per-word in the gated e2e test — see comparison doc §open-items.)
+   - **Fallback — `aeneas` forced alignment** of the normalized text against `vo.wav` (DTW) if the
+     installed `kokoro` build's token timing isn't granular enough.
    - **whisper.cpp is NOT used for timing** — only as an optional QA transcription to spot gross errors.
 5. **Round to integer frames ONCE, here:** convert every word `start/end` from seconds to an integer
    frame (`round(s × fps)`) a single time, in `tts-voiceover`. **Store frames, not seconds,** in
@@ -130,15 +132,17 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 
 ### 3.4 Host dependencies (where `/short` runs — this machine)
 
-- `piper` (piper-tts) + the **configured** voice `.onnx` model(s) (plus the 2–3 candidates for the
-  one-time selection test).
-- **`aeneas`** (+ `espeak`/`ffmpeg`) for the forced-alignment **fallback** path only. Primary path uses
-  Piper's own phoneme durations and needs no aligner.
+- **`pip install kokoro misaki`** (the Python Kokoro package + its G2P) + **`espeak-ng`** (system pkg,
+  phonemizer). The Kokoro-82M weights auto-download from Hugging Face on first run (Apache-2.0). The
+  **configured voice is a NAME** (e.g. `am_michael`) bundled with the package — not a file path.
+- **`aeneas`** (+ `espeak-ng`/`ffmpeg`) for the forced-alignment **fallback** path only. Primary path
+  uses Kokoro's native token timing and needs no aligner.
 - `whisper.cpp` is **optional** (QA-only sanity transcription), not required for timing.
 - `ffmpeg` (already present) for silence-trim, the ducking envelope render, and the −14 LUFS master.
-- The `tts-voiceover` **preflight** checks that Piper is installed AND **the voice named in config
-  exists**, and that the aligner is available *if* the native-duration path isn't. If anything is
-  missing it **pauses with install instructions** rather than failing silently.
+- The `tts-voiceover` **preflight** checks that the `kokoro` package imports, `espeak-ng` is present,
+  AND **the voice named in config is a valid Kokoro voice**, and that the aligner is available *if* the
+  native-timing path isn't. If anything is missing it **pauses with install instructions** rather than
+  failing silently.
 
 ### 3.5 Timing contract — `vo-timing.json` schema (the cross-component interface)
 
@@ -149,8 +153,8 @@ appear in this file.**
 ```json
 {
   "fps": 30,
-  "voice": "en_US-ryan-high",
-  "length_scale": 1.0,
+  "voice": "am_michael",
+  "speed": 1.0,
   "total": 900,                      // = durationInFrames; the validator tiles [0, total]
   "words": [
     { "i": 0, "display": "Cleopatra", "spoken": "cleopatra",
@@ -225,7 +229,7 @@ From the v3 render-qa polish list, encode in `03`/`05`:
 
 ## 6. AI disclosure change
 
-- Synthetic Piper voice ⇒ on upload, set YouTube **"Altered or synthetic content" = YES**.
+- Synthetic Kokoro voice ⇒ on upload, set YouTube **"Altered or synthetic content" = YES**.
 - Update `CLAUDE.md` standard + `short-assembly` README block: the script/research exemption no
   longer applies once a synthetic voice is in the render.
 
@@ -233,7 +237,7 @@ From the v3 render-qa polish list, encode in `03`/`05`:
 
 ## 7. Out of scope (YAGNI)
 
-- Paid TTS (ElevenLabs/OpenAI/Azure) — explicitly rejected; Piper only.
+- Paid TTS (ElevenLabs/OpenAI/Azure) — explicitly rejected; Kokoro only.
 - Multi-language VO.
 - Live/streaming sidechain ducking (we precompute a deterministic envelope instead).
 - Auto-selecting the voice — a human picks from samples once; then it's the default.
@@ -245,13 +249,14 @@ From the v3 render-qa polish list, encode in `03`/`05`:
 
 | Risk | Mitigation |
 |---|---|
-| **Word-onset accuracy (the load-bearing risk)** — bad timing on "Ptolemaic"/numbers would break the whole VO-drives-timing premise | **Don't transcribe — use Piper's own phoneme durations (exact by construction); aeneas forced-alignment fallback; whisper NOT used for timing** (§3.3 step 4). The §3.6 failure detector (monotonicity, coverage ±5%, plausible durations, token-count match) makes the fallback first-class; two failures abort rather than ship bad sync. |
+| **Word-onset accuracy (the load-bearing risk)** — bad timing on "Ptolemaic"/numbers would break the whole VO-drives-timing premise | **Don't transcribe — use Kokoro Python's native token timing (exact by construction); aeneas forced-alignment fallback; whisper NOT used for timing** (§3.3 step 4). The §3.6 failure detector (monotonicity, coverage ±5%, plausible durations, token-count match) makes the fallback first-class; two failures abort rather than ship bad sync. |
+| **Kokoro determinism unverified** — no documented seed/determinism guarantee | Generate `vo.wav` + `vo-timing.json` ONCE per run and **commit them as artifacts**; never re-synthesize a shipped run. Reproducibility comes from reuse, not re-synthesis (covers the one dimension Piper won on). |
 | Text normalization mismatch (numbers/abbrevs spoken ≠ written) | `tts-voiceover` normalizes to spoken tokens and aligns against THAT, keeping a `spoken→display+beat` map (§3.3 step 2, §3.5 `spoken`/`display`). |
-| Piper leading silence offsets audio vs frame 0 | Trim Piper lead/tail silence before alignment so `t=0` of `vo.wav` is the first phoneme (§3.3 step 3). |
+| Kokoro leading silence offsets audio vs frame 0 | Trim Kokoro lead/tail silence before alignment so `t=0` of `vo.wav` is the first phoneme (§3.3 step 3). |
 | Seam rounding (beat boundaries vs caption windows disagree by a frame) | Round to integer frames **once** in `tts-voiceover`; store frames not seconds; all consumers read the same ints (§3.3 step 5, §3.5). |
 | Ducking pumps/chatters | Region-merge <300ms + attack ~60ms / release ~300ms envelope (§4). |
-| Host missing piper/aeneas or the **configured voice** | Preflight checks Piper + the *named* voice exists (and aligner if needed); pauses with install steps (§3.4). |
-| VO overruns target length | Writer targets 28–32s; **lower** `length_scale` toward ~0.95 (NOT raise) or, if that would go below ~0.9, **loop back to the writer to cut words** (3.5→3 edge, §3.2). |
+| Host missing kokoro/espeak-ng/aeneas or the **configured voice** | Preflight checks the `kokoro` import + `espeak-ng` + the *named* Kokoro voice (and aligner if needed); pauses with install steps (§3.4). |
+| VO overruns target length | Writer targets 28–32s; **raise** Kokoro `speed` toward ~1.1 (faster) or, if that would exceed ~1.15, **loop back to the writer to cut words** (3.5→3 edge, §3.2). |
 | Frame-map churn breaks audio cues | VO-derived map in `vo-timing.json` is the single source of truth; SFX cues recomputed from it, not hard-coded. |
 | Disclosure missed | Completeness gate adds "README disclosure = YES" — a **reminder, not enforcement** (can't flip the YouTube toggle; §3.1 `short-assembly`). |
 
