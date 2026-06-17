@@ -17,15 +17,16 @@
 | **Monetization-safe** | Yes — Pixabay license explicitly permits commercial use and monetized video; download the per-track Pixabay License Certificate PDF at render time to dispute any automated Content ID claim if one arises (Pixabay provides this resolution path) |
 | **Content ID risk note** | Some Pixabay contributors register tracks with Content ID. If a claim is filed, dispute it using the Pixabay License Certificate — YouTube resolves these within ~30 days. The Pixabay license is the legal receipt. This is not a reason to reject the track; it is a known-manageable procedural risk. |
 
-**Mood / fit:** Low, minimal, tension-building ambient cinematic — dark thriller atmosphere with no lyrics. Matches the script's "low, suspenseful build that rises subtly into the Beat 6 payoff, then resolves on the loop." No vocals to fight word-by-word captions.
+**Mood / fit:** Low, minimal, tension-building ambient cinematic — dark thriller atmosphere with no lyrics. Matches the script's "low, suspenseful build that rises subtly into the Beat 6 payoff, then resolves on the loop." No vocals to fight the VO or the word-by-word captions.
 
-**Mix (no voiceover — the bed is the LEAD, not a background):**
-- Bed level: **`<Audio volume={0.72}>`** — this is the only sustained audio, so it carries the video. (The original spec said "-20 dB under dialogue baseline → `volume={0.11}`" — WRONG: there is no dialogue. That single line is what shipped F-001 at -30 LUFS.)
-- Fade in: 0→full over frames 0–30 (first 1 second).
-- Hold at full from frame 30 to frame 600 (Beat 5 end).
-- Subtle swell: +3 dB gain ramp from frame 540→600 (1 beat before payoff) to underscore the reveal build.
-- Hold swelled level through frame 720 (peak of Beat 6 payoff).
-- Fade out: full→0 over frames 765–840 (loop-back, 2.5 seconds), landing silently on frame 840 so the loop restart sounds clean.
+**Mix (VO is the LEAD — the music bed DUCKS under it):**
+- **Voiceover `vo.wav`: `<Audio volume={0.95}>`** — the lead; `staticFile('vo.wav')`, starts at frame 0 (VO speaks immediately, no silent lead).
+- **Music bed: ducked under the VO via the `vo-timing.json` `envelope`.** Drive the bed `<Audio>` `volume` with a frame-callback that reads the envelope keyframes (linear ramp between them):
+  - `0 → 855`: **0.22** (the single merged `speech_regions` span — continuous narration, so the bed stays ducked under the whole VO).
+  - `855 → 864`: ramp **0.22 → 0.72** (release ~9 frames as the VO ends).
+  - `864 → 930`: **0.72** — the music **swells back up** to carry the silent loop tail / payoff hold.
+- Tail: from ~frame 905 fade the bed toward 0 by frame 930 so the loop restart is clean (it re-enters ducked at frame 0). The envelope already lifts the bed for the tail; layer a short fade-out on top for the seam.
+- Do NOT mix the bed flat-loud over the voice and do NOT crush it to ~0.11 — the deterministic envelope is the whole point (VO intelligible throughout, music breathes on the payoff).
 
 ---
 
@@ -33,20 +34,22 @@
 
 All SFX from **Pixabay Sound Effects** — Pixabay Content License, free commercial use, no attribution required. Download from original Pixabay URL at render time; save the license certificate.
 
+> Frame cues recomputed from the VO-derived beat frames in `vo-timing.json` (hook 0, beat1 109, beat2 259, beat3 397, beat4 493, beat5 592, beat6 702, loop 855). The year-stamp ticks land where each year word is spoken; whooshes on the gap beats; the reveal hit on the payoff beat.
+
 | Cue | Description | At frame | Source | Search URL | License |
 |-----|-------------|----------|--------|-----------|---------|
-| Year-stamp tick 1 | Single dry mechanical "tick" or "lock" click — stone-impact feel | **150** (Beat 1: "2560 BC" snaps in) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
-| Year-stamp tick 2 | Same SFX as tick 1 (reuse the same file) | **255** (Beat 2: "69 BC" locks in) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
-| Year-stamp tick 3 | Same SFX as tick 1 | **480** (Beat 4: "1969" locks in) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
-| Bracket whoosh | Short air-whoosh as bracket stretches across the timeline | **255** (bracket begins stretching Beat 2→3) and **480** (second bracket Beat 5) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/whoosh/ | Pixabay Content License — commercial use, no attribution |
-| Low reveal hit (payoff) | Single deep cinematic impact / low boom — the "oh wow" hit | **600** (Beat 6 payoff start: "~450 YEARS CLOSER" stamps) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/cinematic-hit/ | Pixabay Content License — commercial use, no attribution |
+| Year-stamp tick 1 | Single dry mechanical "tick" or "lock" click — stone-impact feel | **109** (Beat 1: "2560 BC") | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
+| Year-stamp tick 2 | Same SFX as tick 1 (reuse the same file) | **259** (Beat 2: "69 BC") | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
+| Year-stamp tick 3 | Same SFX as tick 1 | **493** (Beat 4: "1969") | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/clock-tick/ | Pixabay Content License — commercial use, no attribution |
+| Bracket whoosh | Short air-whoosh as a gap segment grows | **397** (Beat 3 gold gap) and **592** (Beat 5 blue gap) | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/whoosh/ | Pixabay Content License — commercial use, no attribution |
+| Low reveal hit (payoff) | Single deep cinematic impact / low boom — the "oh wow" hit | **702** (Beat 6 payoff start: "~450 YEARS CLOSER") | Pixabay Sound Effects | https://pixabay.com/sound-effects/search/cinematic-hit/ | Pixabay Content License — commercial use, no attribution |
 
-**SFX mix levels (sit above the lead bed; the reveal hit is loudest):**
+**SFX mix levels (sit above the ducked bed; the reveal hit is loudest, just under the VO):**
 - Year-stamp ticks: punchy accent. Remotion `<Audio volume={0.60}>` per instance.
 - Bracket whooshes: quick pass, just above the bed. Remotion `<Audio volume={0.50}>`.
-- Low reveal hit (frame 600): the emotional peak — loudest element, peak near -1 dBFS in the render. Remotion `<Audio volume={0.95}>`.
+- Low reveal hit (frame 702): the emotional peak — loudest non-VO element, peak near -1 dBFS in the render. Remotion `<Audio volume={0.95}>`.
 
-**SFX render note:** All three tick cues use the same single file — load it once and sequence three `<Audio>` instances with `startFrom` matching the beat frame offsets. Remotion handles overlapping audio instances cleanly.
+**SFX render note:** All three tick cues use the same single file — load it once and sequence three `<Audio>` instances with `trimBefore`/offsets matching the beat frames. Remotion handles overlapping audio instances cleanly.
 
 ---
 
@@ -56,14 +59,16 @@ Per-element volumes above are *balance*. The rendered file's *loudness* is set h
 
 - **-14 LUFS integrated · ≤ -1 dBTP · LRA 11.** Apply the two-pass `loudnorm` from `.claude/skills/asset-sourcing/references/audio-mastering.md` to `out.mp4` → `final.mp4`, then verify. Upload `final.mp4`.
 
-### Mastering result (measured — this is the F-001 fix)
+### Mastering result (v3 reference — v4 must be RE-MEASURED post-render)
+
+The numbers below are from the **v3** (no-VO) render and are kept as the worked example of the fix. **v4 has a different mix (VO lead + ducked bed), so measure it fresh** after rendering `out.mp4`: run pass 1 to read the v4 `measured_*` values, then pass 2 with those. Target unchanged: -14 LUFS / ≤ -1 dBTP / LRA 11.
 
 | | Integrated | True peak | LRA | In-feed |
 |---|---|---|---|---|
-| **As first rendered** (bed `0.11`, no master) | **-30.6 LUFS** | -8.3 dBTP | 13.7 | near-silent vs other Shorts |
-| **After two-pass loudnorm to -14** | **-14.8 LUFS** | -0.65 dBTP | 11.9 | correct; riser build→hit preserved |
+| **v3, as first rendered** (bed `0.11`, no master) | **-30.6 LUFS** | -8.3 dBTP | 13.7 | near-silent vs other Shorts |
+| **v3, after two-pass loudnorm to -14** | **-14.8 LUFS** | -0.65 dBTP | 11.9 | correct; riser build→hit preserved |
 
-Exact command used (audio re-leveled; the quiet build → reveal-hit dynamics survived):
+Exact command shape (v3 values shown — substitute v4's pass-1 measurements):
 ```bash
 # pass 1: measure  →  pass 2:
 ffmpeg -i out.mp4 -c:v copy \

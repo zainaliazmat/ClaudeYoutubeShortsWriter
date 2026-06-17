@@ -1,0 +1,6 @@
+# Local TTS virtualenv for the tts-voiceover engine (Kokoro + torch, multi-GB).
+# Created on the host where /short runs; never committed. See
+# .claude/skills/tts-voiceover/SKILL.md for how to recreate it.
+.venv-tts/
+__pycache__/
+*.pyc

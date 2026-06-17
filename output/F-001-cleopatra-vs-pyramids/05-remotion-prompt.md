@@ -1,162 +1,82 @@
-# F-001 — Remotion Composition Prompt — v3
+# F-001 — Remotion Composition Prompt — v4 (VO-driven)
 
 ## Use the Remotion official skills to build this composition.
-> `npx skills add remotion-dev/skills`. Build exactly what's specified — every frame, color, position and animation is pinned below. Do not invent facts or text; all on-screen copy is final.
->
-> **v3 design (post-render review):** the v2 render was near-black and empty. v3 rebuilds the layout around a **VERTICAL timeline that fills the full 9:16 height**, **hero numbers that dominate (~340px Anton)**, a **scale-honest** two-segment gap (positions computed from the years), a **navy→indigo depth-gradient background**, fast ease-out count-ups, and a subject-identifier kicker. Frame map and audio cues are unchanged from v2.
+- Composition id: `F-001-cleopatra-vs-pyramids` · 1080×1920 · 30fps · **durationInFrames: 930** (= `vo-timing.json` `total`; 31s)
+- Frames 0-indexed, half-open, contiguous per the VO-patched frame-map table in `02-script.md`. Last visual (loop) ends at 930 and matches frame 0. The loop tail (855–930) is **silent** (VO ended; music swells then fades).
 
-- **Composition id:** `F-001-cleopatra-vs-pyramids`
-- **Dimensions:** 1080×1920 · **fps:** 30 · **durationInFrames:** **840** (28s)
-- Frames 0-indexed; scene ranges half-open & contiguous (`next.start == prev.end`); final scene loops back to the frame-0 composition.
-- All motion via `interpolate()` (with `extrapolateLeft/Right:'clamp'` + `Easing.*`) or `spring()`. **No `Math.random()`** — use Remotion `random(seed)` for stars.
+## Design tokens
+- **Fonts:** `Anton` (`@remotion/google-fonts/Anton`, OFL) — hook lines, year stamps, hero numbers, payoff; `Space Mono` (`@remotion/google-fonts/SpaceMono`, OFL) — rolling count-up digits only, `letter-spacing: -0.04em` at hero scale.
+- **Colors:** bg gradient `#0B1430` (top) → `#1C2A55` (bottom); hero radial glow `#2E4A8C` @35%; nebula `#3A2C6B` @12%; text `#F4F1E8`; accent gold `#F2B53C` (ancient/Pyramid side); reveal ice-blue `#6FD3FF` (modern/Moon side); timeline spine `#5B6BA8` ≥12px.
+- **Persistent background layer (all frames):** vertical navy→indigo gradient + ~900px radial hero glow (breathing scale 1.0↔1.04 / ~120f) + faint upper-left nebula wash + drifting 2–4px star field (~70 dots, +2px/s). **Never flat single-hex black.**
+- **Motion signature:** word slam-in `spring(tension 200, damping 22)` Y+48→0; hero overshoot `spring(200, 13)` scale 0.55→1.0; year-stamp shake `spring(420, 28)` micro-oscillate then lock; segment grow `spring(130, 24)` scaleY 0→1 on ≥12px bars; count-up `interpolate(...Easing.out(Easing.cubic))` 30f then hold, value `Math.max(0,…)`; payoff glow pulse sinusoidal; cross-dissolve loop linear.
 
----
+## Spatial frame (whole video)
+Vertical time-axis fills the safe height (y≈260–1660): **Pyramid pinned TOP (2560 BC), Moon pinned BOTTOM (1969)**, Cleopatra node at **~55% down** (time-accurate, below center). Scale: 4,529 yr over ~1,200px → 0.265 px/yr; Pyramid→Cleopatra gap = 660px, Cleopatra→Moon gap = 540px (true 1.22 ratio). **Date ticks + era labels** ("Old Kingdom", "Ptolemaic", "Space Age") fill the right band.
 
-## Design tokens (from `03-assets.md`)
+## Scenes (frame-exact)
+> Layout: full safe area y≈260–1660 in bands — context line (upper third) · hero element (center) · vertical timeline + comparison (runs through, anchored lower). Hero numbers ≥ ~340px Anton. Decorative layers visible at viewing size (≥12px spine, ~360px motifs). VO speaks throughout; captions step word-by-word (below).
 
-**Fonts** (via `@remotion/google-fonts`):
-- Display/hero (hook, year stamps, hero numbers, payoff): **Anton** 400 — `@remotion/google-fonts/Anton`
-- Count-up rolling digits only: **Space Mono** 700 — `@remotion/google-fonts/SpaceMono`, `letter-spacing:-0.04em` on large numbers. (The *settled* hero number sets in Anton; mono is only the live counter.)
+### Scene 0 — Hook (frames 0–109)
+- Kicker "EGYPT'S QUEEN" (gold, ~90px, uppercase) upper third; hero "Cleopatra is closer to **YOU**" (off-white, ~150px) center; "than the **Pyramids**" (gold, ~150px) below. "YOU" overshoots in ~frame 24.
+- Faint full timeline preview: lit gold pyramid silhouette top, pale moon disc bottom, "Cleopatra" label low-center (~55%). Gradient + glow behind text.
+- **Frame-fill note:** three bands used (kicker upper / hero center / timeline preview lower); ~0% dead zone — glow + stars + spine fill the rest.
 
-**Colors:**
-| Token | Hex | Use |
-|-------|-----|-----|
-| `bgTop` | `#0B1430` | gradient top (Pyramid/ancient end) |
-| `bgBottom` | `#1C2A55` | gradient bottom (Moon/modern end) |
-| `glow` | `#2E4A8C` @35% | ~900px radial behind center hero |
-| `nebula` | `#3A2C6B` @12% | faint upper-left wash |
-| `text` | `#F4F1E8` | captions / context |
-| `gold` | `#F2B53C` | ancient side — Pyramid years + Pyramid→Cleopatra segment |
-| `ice` | `#6FD3FF` | modern side — 1969, Cleopatra→Moon segment, payoff pulse |
-| `rule` | `#5B6BA8` | timeline spine, **≥12px** thick |
+### Scene 1 — Beat 1 (frames 109–259)
+- Context "THE GREAT PYRAMID" + small "Khufu · Old Kingdom" (upper); hero **"2560 BC"** (~340px gold) center, year-stamp shake on entry; tick SFX @109.
+- Timeline establishes (draws top→bottom); **~360px lit gold pyramid** anchors TOP node + soft glow; era label "Old Kingdom" + first date tick appear right band.
+- **Frame-fill note:** pyramid motif (top) + hero year (center) + spine/ticks (right) → full height used, no >40% dead zone.
 
-**Persistent background layer (z:0, ALL 840 frames) — never flat black:**
-- `<AbsoluteFill>` with a vertical linear gradient `bgTop→bgBottom` over the full 1920px.
-- Radial `glow` (~900px, `#2E4A8C` @35%) centered behind the hero (≈x540,y900); softly breathes scale 1.0↔1.04 over ~120f.
-- Faint `nebula` blob upper-left (`#3A2C6B` @12%, large blur).
-- Star field: single `<svg>`, ~70 dots **2–4px** `#F4F1E8` @25–60%, placed with `random('stars')` (NOT `Math.random`); drift `translateY` `interpolate(frame,[0,840],[0,-56])` (~+2px/s up).
+### Scene 2 — Beat 2 (frames 259–397)
+- Context "EGYPT'S LAST QUEEN · CLEOPATRA" (upper); hero **"69 BC"** (~340px gold) center, year-stamp shake; tick SFX @259.
+- Cleopatra marker node lands at ~55% down; "Cleopatra" + era label "Ptolemaic" ride the node. Pyramid stays pinned top.
+- **Frame-fill note:** node at 55% + pyramid top + hero center → lower band populated, no dead zone.
 
-**Motion configs:** `wordSlamIn` spring t200/d22 (Y+48→0, 8f) · `heroOvershoot` spring t200/d13 (scale 0.55→1.0 overshoot ~1.10, 12f) · `yearStampShake` spring t420/d28 (±5px, 3 cycles, 12f) · `segmentGrow` spring t130/d24 (scaleY 0→1 anchored top, 28–34f) · `payoffGlow` sinusoidal shadow blur 4→18→4px (continuous, ~3 cycles/165f) · `nodeNudge` spring t110/d20 (Y +0→+28, 18f) · `crossDissolve` linear opacity 75f.
+### Scene 3 — Beat 3 (frames 397–493) · first gap
+- Context "PYRAMID → CLEOPATRA" (upper); hero **"~2,500" + "YEARS"** (~340px gold) center.
+- **Thick gold segment (≥12px)** grows down spine Pyramid→Cleopatra = **660px** (scale-honest); Space-Mono counter rolls **0→2,500** over ~30f ease-OUT then holds (clamped ≥0); whoosh SFX @397.
+- **Frame-fill note:** growing 660px bar spans top→55%, hero number center → strong fill.
 
----
+### Scene 4 — Beat 4 (frames 493–592)
+- Context "THE MOON LANDING" + small "Space Age" (upper); hero **"1969"** (~340px ice-blue) center, year-stamp shake; tick SFX @493.
+- Focus drops to BOTTOM node — **~360px moon disc** + ~120px rocket & launch-flash; era label "Space Age" bottom-right. Gold gap stays visible above.
+- **Frame-fill note:** moon motif bottom + hero center + retained gold gap → full height used.
 
-## The vertical timeline (the spine of every scene) — SCALE-HONEST, computed from the years
+### Scene 5 — Beat 5 (frames 592–702) · second gap
+- Context "CLEOPATRA → MOON" (upper); hero **"~2,000" + "YEARS"** (~340px ice-blue) center.
+- **Thick ice-blue segment (≥12px)** grows down Cleopatra→Moon = **540px**, collinear below the gold on the same spine so blue is **visibly shorter**; counter rolls **0→2,000** ease-OUT then holds (clamped ≥0); whoosh SFX @592.
+- **Frame-fill note:** both segments now on spine (660 gold above 540 blue), hero center → no dead zone. **Scale-honest: 660:540 = 1.22 = 2,491:2,038, computed from the values.**
 
-- **Spine:** a `#5B6BA8` **≥12px-wide** vertical bar at **x≈170** (left lane), running **y 300 (TOP node) → y 1500 (BOTTOM node)** = **1200px** over the full safe height. Soft glow.
-- **Nodes (positions computed from `01-verified-facts.md`, NOT eyeballed):** span = 2560 BC→1969 = **4,529 yrs over 1200px ⇒ 0.2650 px/yr**.
-  - **Pyramid** (2560 BC, year 0) → **y 300** (top). Large **gold pyramid silhouette ~360px** anchored here.
-  - **Cleopatra** (69 BC = 2,491 yrs after pyramid) → y 300 + 2491·0.265 = **y 960** (≈55% down, just below center). Node marker + "Cleopatra" label.
-  - **Moon** (1969 = 4,529 yrs) → **y 1500** (bottom). Large **ice moon disc ~360px** anchored here.
-- **Segments (proportional, verifies the payoff):** Pyramid→Cleopatra = y300→960 = **660px** (2,491 yr); Cleopatra→Moon = y960→1500 = **540px** (2,038 yr). 660/540 = 1.22 = the real ratio → the gold gap is honestly longer than the ice gap. **Do NOT pin non-proportional lengths.** Both bars are **14px-wide, centered on the spine at x≈170, COLLINEAR** — gold (y300→960) directly above ice (y960→1500), meeting at the Cleopatra node — so ice *continues* gold on the same axis and reads as visibly shorter. No separate side-by-side lane; segments never cross into the content lane (x≥320).
+### Scene 6 — Beat 6 PAYOFF (frames 702–855)
+- Hero "She's **~450 YEARS** closer" (~340px) → "to the **Moon landing**" → "than the **Pyramids**"; "~450" overshoots in; reveal hit SFX @702.
+- **Shared-baseline comparison:** the two gaps render as two bars from a shared baseline at the Cleopatra node — gold up (660px), blue down (540px) — so the ~450-yr difference reads at a glance; shorter blue segment **glow-pulses** through the dwell; "2,500" vs "2,000" flash; Cleopatra node **nudges down** toward the Moon. Quiet glowing hold.
+- **Frame-fill note:** comparison bars + payoff hero + pulsing glow fill the frame; core mechanic (two unequal bars) is the most prominent thing on screen.
 
-**Lane discipline (no caption/glyph collision):** spine + node motifs + segment bars live in the **left lane x 120–300**; context kickers + hero numbers + captions live in the **content lane x 320–1020**. Never overlap them. All within safe area y 154–1632.
+### Scene 7 — Loop-back (frames 855–930)
+- Cross-dissolve (75f, linear) back to the **exact Scene 0 / frame-0 composition** — same gradient, timeline preview, kicker + hook lines in identical position/scale/color. Music swells (864) then fades to 0 by 930. Frame 930 == frame 0 → seamless auto-loop. Silent tail.
 
----
+## Captions (from `vo-timing.json` integer word frames)
+Word-by-word; show each word's `display`; highlight the active word; off-white body with the accent color on the hero number/word per beat (gold ancient side, ice-blue modern side). **Consecutive words sharing a `display` are merged into ONE token** (a number/abbrev expands to several spoken words but renders once). Safe zone: y 154–1632, x 60–1020, out of the timeline-node lane. Frames:
 
-## Scenes (frame-exact) · bands = context (upper third) / hero (center) / timeline (left, full height)
+- **Hook (0–109):** Cleopatra 0–19 · lived 19–27 · closer 27–40 · in 40–43 · time 43–53 · to 53–57 · you 57–64 · than 64–67 · to 67–70 · the 70–73 · Great 73–81 · Pyramids 81–109
+- **Beat 1 (109–259):** The 112–115 · Great 115–124 · Pyramid 124–137 · was 137–142 · finished 142–152 · around 152–162 · **2560 162–191** · **BC 191–214** · for 217–221 · the 221–224 · pharaoh 224–237 · Khufu 237–259
+- **Beat 2 (259–397):** Cleopatra 266–292 · Egypt's 296–307 · last 307–316 · queen 316–334 · was 336–342 · born 342–350 · in 350–355 · **69 355–375** · **BC 375–397**
+- **Beat 3 (397–493):** That's 397–402 · about 402–411 · **~2,500 411–446** · years 446–457 · after 457–465 · the 465–467 · pyramid 467–493
+- **Beat 4 (493–592):** The 498–501 · first 501–511 · Moon 511–520 · landing 520–534 · was 534–540 · in 540–544 · **1969 544–592**
+- **Beat 5 (592–702):** Cleopatra 596–616 · was 616–621 · born 621–631 · only 631–642 · **~2,000 642–662** · years 662–673 · before 673–684 · that 684–702
+- **Beat 6 (702–855):** So 705–711 · she's 711–717 · roughly 717–728 · **450 728–758** · years 758–768 · closer 768–782 · to 782–785 · the 785–789 · Moon 789–800 · landing 800–815 · than 815–819 · to 819–823 · the 823–827 · pyramids 827–855
 
-### Scene 0 — Hook (frames 0–45)  — fully lit at frame 0, complete claim incl. "YOU"
-- **Context kicker (upper, y≈360, content lane):** `EGYPT'S QUEEN` — Anton ~70px, `gold`, letter-spaced caps.
-- **Hero (center, y≈820–1040, content lane):** `Cleopatra is closer to YOU` (Anton ~96px, `text`; **YOU** ~132px `gold`) / `than the Pyramids` (Anton ~104px, `gold`).
-- **Timeline (left lane):** faint preview — spine @40% with the gold pyramid (top) + ice moon (bottom) dimly visible; "Cleopatra" hint near y960. No segments yet.
-- **Animation:** kicker + lines `wordSlamIn` staggered (kicker@0, line1@6, line2@12); **YOU** `heroOvershoot` @24. Frame 0 already shows the full text (emphasis animates, word never withheld).
-- **z:** bg(0) < timeline-preview(1) < text(2).
-- **Frame-fill note:** left spine fills the vertical; content lane carries kicker(upper)+hero(center); glow fills center; no dead zone.
+(Caption `display` strings follow the script's on-screen styling — e.g. spoken "2,500" renders "~2,500", "2560"+"BC" render "2560 BC". The frames above are copied verbatim from `vo-timing.json`, merging same-display runs.)
 
-### Scene 1 — Beat 1 (frames 45–150)
-- **Context (upper, y≈360):** `THE GREAT PYRAMID` — Anton ~64px `text`.
-- **Hero (center, y≈900):** `2560 BC` — Anton **~340px** `gold`.
-- **Timeline:** spine draws in top→bottom (45–75); **gold pyramid silhouette ~360px** pops at the TOP node (y300) with `yearStampShake`-synced glow.
-- **Animation:** context `wordSlamIn`@45; `2560 BC` `yearStampShake`@~95 (stone impact). Tick SFX @150.
-- **Frame-fill note:** pyramid motif + spine fill upper-left through full height; hero year dominates center. 0% dead.
-
-### Scene 2 — Beat 2 (frames 150–255)
-- **Context (upper):** `EGYPT'S QUEEN · CLEOPATRA` — Anton ~60px `text`.
-- **Hero (center, y≈900):** `69 BC` — Anton **~340px** `gold`.
-- **Timeline:** **Cleopatra node** marker + label lands at **y960 (55% down)** via `wordSlamIn`; pyramid stays pinned top. Tick SFX @255.
-- **Animation:** `69 BC` `yearStampShake`@~200.
-- **Frame-fill note:** spine now shows two nodes spanning the height; hero year center. No empty band.
-
-### Scene 3 — Beat 3 (frames 255–375) · first gap
-- **Context (upper):** `PYRAMID → CLEOPATRA` — Anton ~58px `text`.
-- **Hero (center, y≈900):** rolling Space Mono counter `0→2,500` then settled `~2,500` + `YEARS` (Anton ~340px `gold`).
-- **Timeline:** **gold segment grows DOWN** the spine y300→960 (**660px**, `segmentGrow` 28–34f) — synced with the counter so the screen is never just a lone digit. Whoosh SFX @255.
-- **Counter:** `Math.round(interpolate(frame,[255,285],[0,2500],{easing:Easing.out(Easing.cubic),extrapolateLeft:'clamp',extrapolateRight:'clamp'}))` wrapped in `Math.max(0,…)` — **never negative**; **~30f ease-OUT then holds**. Settled `~2,500 YEARS` `heroOvershoot`@~360.
-- **Frame-fill note:** growing gold bar fills left height; hero number center; context upper. 0% dead.
-
-### Scene 4 — Beat 4 (frames 375–480)
-- **Context (upper):** `THE MOON LANDING` — Anton ~64px `text`.
-- **Hero (center, y≈900):** `1969` — Anton **~340px** `ice`.
-- **Timeline:** focus drops to BOTTOM — **ice moon disc ~360px** at y1500 lights up; small `Rocket` (`lucide-react`, ~120px `ice`) beside it with launch-flash (opacity 0→1, 6f). Gold segment stays visible above. Tick SFX @480.
-- **Animation:** `1969` `yearStampShake`@~430 (ice = modern side).
-- **Frame-fill note:** moon motif anchors bottom, pyramid top, hero center — full height used.
-
-### Scene 5 — Beat 5 (frames 480–600) · second gap
-- **Context (upper):** `CLEOPATRA → MOON` — Anton ~58px `text`.
-- **Hero (center, y≈900):** rolling counter `0→2,000` then settled `~2,000` + `YEARS` (Anton ~340px `ice`).
-- **Timeline:** **ice segment grows DOWN** Cleopatra→Moon y960→1500 (**540px**, 14px wide, x≈170) — **collinear below the gold one on the spine**, continuing it from the Cleopatra node on the same axis so the two are directly comparable and **ice is visibly shorter**. Whoosh SFX @480.
-- **Counter:** same clamp pattern, `interpolate(frame,[480,510],[0,2000],{easing:Easing.out(Easing.cubic),…})`, `Math.max(0,…)`, ~30f ease-OUT then hold. `~2,000 YEARS` `heroOvershoot`@~585.
-- **Frame-fill note:** both segments now fill the spine (gold 660 + ice 540); hero center. No dead zone.
-
-### Scene 6 — Beat 6 / Payoff (frames 600–765)
-- **Hero (center, staged):** `She's ~450 YEARS closer` (`~450` Anton ~340px `ice`; rest ~76px `text`) / `to the Moon landing` / `than the Pyramids`.
-- **Timeline:** both segments shown **collinear on the spine** (gold y300→960 above ice y960→1500, x≈170, 14px) so the **shorter ice gap is directly readable below the longer gold gap**; the **ice segment `payoffGlow` pulses continuously** (never static through the dwell). The two values `2,500` vs `2,000` flash, then `~450 YEARS CLOSER` stamps; **Cleopatra node `nodeNudge` eases downward (+28px) toward the Moon.** Reveal-hit SFX @600.
-- **Animation:** lines staggered `wordSlamIn` (600 / 675 / 720); glowing hold 720–765.
-- **z (Beat 6):** bg(0) < timeline+segments(1) < flashing 2,500/2,000 values(2) < payoff lines + "~450"(3) — the payoff text is always topmost.
-- **Frame-fill note:** side-by-side bars + glow fill left+center; three payoff lines step down content lane. 0% dead.
-
-### Scene 7 — Loop-Back (frames 765–840)
-- **Action:** `crossDissolve` — Beat-6 layer opacity 1→0 (765–820); Hook layer 0→1 (790–840). Segments fade so the final frame matches the Hook (faint timeline preview only, no grown segments). Gradient + star field continuous.
-- **End state @ frame 840:** pixel-matches frame 0 (`EGYPT'S QUEEN` / `Cleopatra is closer to YOU` / `than the Pyramids`, identical positions/scales/colors, faint timeline, no segments) → auto-loop invisible.
-
----
-
-## Captions (burned-in, word-by-word, hand-timed — no Whisper/VO)
-Accent the hero word/number per beat (gold = ancient side, ice = modern side). All within y 154–1632, content lane x 320–1020, clear of the timeline lane.
-
-| Scene | Word group | Frame window |
-|-------|-----------|--------------|
-| Hook | "EGYPT'S QUEEN" | 0–10 |
-| Hook | "Cleopatra" | 10–18 |
-| Hook | "is closer to" | 18–24 |
-| Hook | "YOU" | 24–33 |
-| Hook | "than the Pyramids" | 33–45 |
-| Beat 1 | "The Great Pyramid" | 45–95 |
-| Beat 1 | "2560 BC" | 95–150 |
-| Beat 2 | "Egypt's queen, Cleopatra" | 150–200 |
-| Beat 2 | "born 69 BC" | 200–255 |
-| Beat 3 | "Pyramid to Cleopatra" | 255–300 |
-| Beat 3 | "~2,500 years" | 300–375 |
-| Beat 4 | "The Moon landing" | 375–430 |
-| Beat 4 | "1969" | 430–480 |
-| Beat 5 | "Cleopatra to the Moon" | 480–540 |
-| Beat 5 | "~2,000 years" | 540–600 |
-| Beat 6 | "She's ~450 years closer" | 600–675 |
-| Beat 6 | "to the Moon landing" | 675–720 |
-| Beat 6 | "than the Pyramids" | 720–765 |
-
----
-
-## Audio (`@remotion/media` `<Audio>`; reference via `staticFile()` from `public/`)
-Renderer downloads files from the URLs in `04-audio.md` at render time into `public/`. (Audio spec unchanged from the fixed v2.)
-
-- **Music bed (LEAD — no VO):** `public/music-dark-tension.mp3` — base `volume={0.72}` via frame-callback: fade in 0→0.72 over 0–30; hold to 540; swell 0.72→~1.0 over 540–600; hold to 720; fade ~1.0→0 over 765–840 (silent at 840 for a clean loop).
-- **SFX** (Pixabay Content License; one tick file reused 3×; SFX above the bed):
-  - `public/sfx-tick.mp3` at frames **150 / 255 / 480** — `volume={0.60}`.
-  - `public/sfx-whoosh.mp3` at frames **255 / 480** — `volume={0.50}` (segment grows).
-  - `public/sfx-reveal-hit.mp3` at frame **600** — `volume={0.95}` (payoff peak; loudest).
-- **Master (final step, not in Remotion):** two-pass `loudnorm` on the rendered `out.mp4` → **−14 LUFS / ≤ −1 dBTP / LRA 11** → `final.mp4`, then verify. Upload `final.mp4`.
-
----
+## Audio (VO is the lead — music ducks under it)
+- **VO:** `staticFile('vo.wav')` @ `volume={0.95}`, starts frame 0 (the lead; speaks from the first frame).
+- **Music bed:** `public/<dark-tension-track>.mp3` with a frame-callback `volume` reading the `vo-timing.json` `envelope`: **0.22 across 0→855** (single merged speech region — continuous narration keeps the bed ducked under the VO), ramp **0.22→0.72 over 855→864** (release), **0.72 through 864→930** (swell carrying the silent tail), plus a short fade toward 0 by 930 for a clean loop seam.
+- **SFX** (`public/`, from `04-audio.md`): tick @109, @259, @493 (vol 0.60); whoosh @397, @592 (vol 0.50); low reveal hit @702 (vol 0.95).
+- **Master (final step):** two-pass `loudnorm` on the rendered `out.mp4` → **-14 LUFS / ≤ -1 dBTP / LRA 11**, then verify. (Re-measure for v4; the bed+VO mix differs from v3.)
 
 ## Loop-back
-Final frame (840) cross-dissolves to the exact frame-0 Hook layout (same text/positions/scale/colors, faint timeline, no segments, gradient + stars continuous); music fades to silence by 840 — so the YouTube auto-loop is visually and sonically seamless.
+Frame 930 composition == frame 0 (hook). Cross-dissolve 855→930; audio silent on the seam. Auto-loop invisible.
 
----
-
-## Assumptions made (where the script/specs were vague)
-- **Vertical-timeline geometry** (spine x≈170, y 300→1500; Cleopatra node y960 = 55%) is computed from the verified years (0.265 px/yr) so the two segments are scale-honest — adjust spine thickness/x if the left lane crowds the hero, but keep the **proportional node positions and the 660:540 ratio**.
-- **Hero numbers ~340px Anton** chosen to fill the content lane within 1080px; reduce ~10% only if a line clips (use `fitText`).
-- **Counters** clamp `≥ 0`, ease-OUT over 30f, then hold (fixes v2's negative-value + drag).
-- **Lane separation** (timeline left, text center) reserves caption lanes so nothing collides with the node glyphs (fixes v2's text/moon overlap).
-- Frame map + audio cues kept identical to v2 so the fixed −14 LUFS audio still lines up.
+## Assumptions made (where the script was vague)
+- Year-stamp SFX placed at each beat's start frame (where the year word begins per `vo-timing.json`), not mid-beat.
+- The shared-baseline comparison (Beat 6) is rendered in addition to the collinear-on-spine view, both proportional — chosen to make the ~450-yr gap unmistakable (design §5).
+- Caption `display` styling ("~2,500", "2560 BC") follows the script's on-screen text; the VO `display` tokens are the word source and same-display runs are merged.

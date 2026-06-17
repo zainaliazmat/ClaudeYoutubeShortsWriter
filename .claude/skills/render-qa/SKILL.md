@@ -22,7 +22,8 @@ renders `out.mp4`/`final.mp4` — it does **not** render anything itself.
 - The rendered file: `out.mp4` (pre-master) and/or `final.mp4` (mastered, post-loudnorm).
 - The run folder `output/F-NNN-<slug>/` — read `05-remotion-prompt.md` for the expected
   `durationInFrames`, fps, per-beat frame ranges, hero sizes, layout bands, and the data-viz
-  proportions; read `04-audio.md` for the loudness target.
+  proportions; read `vo-timing.json` for the authoritative `total`/`fps`/word frames/`speech_regions`
+  (check f); read `04-audio.md` for the loudness target.
 
 Run loudness on `final.mp4` (mastered); run the visual checks on whichever file you're verifying
 (usually `final.mp4` if it exists, else `out.mp4`).
@@ -31,8 +32,8 @@ Run loudness on `final.mp4` (mastered); run the visual checks on whichever file 
 ```bash
 VID=final.mp4            # or out.mp4
 QA=/tmp/render-qa && mkdir -p "$QA" && rm -f "$QA"/*.png 2>/dev/null
-FPS=30                   # from 05-remotion-prompt.md
-EXPECTED_FRAMES=840      # = durationInFrames from 05-remotion-prompt.md
+FPS=30                   # from vo-timing.json / 05-remotion-prompt.md
+EXPECTED_FRAMES=$(python3 -c "import json;print(json.load(open('vo-timing.json'))['total'])")  # durationInFrames
 ```
 
 ## Checks (run all; report each ✅/❌ with the measured number)
@@ -93,6 +94,33 @@ ffmpeg -i final.mp4 -af ebur128=peak=true -f null - 2>&1 | tail -20
 **FAIL if** integrated loudness isn't ≈ -14 LUFS (within ~1) or true peak > -1 dBTP (F-001 shipped
 -30.6 LUFS → silent in-feed). Route → re-run the two-pass `loudnorm` master step in `04-audio.md`.
 
+### f. Voiceover (VO present & audible · music ducked · captions aligned)  ← VO-default channel
+Read `vo-timing.json` for `fps`, `total`, `speech_regions`, and word frames. The mp4 audio is the
+mixed VO+bed (stems aren't separable post-render), so verify what the mix exposes:
+```bash
+# VO present & audible: mean volume across the whole track should be well above silence.
+ffmpeg -i "$VID" -af volumedetect -f null - 2>&1 | grep -E "mean_volume|max_volume"
+# Speech-vs-gap energy: a speech region should be louder than a between-words gap and than
+# the silent loop tail. Sample one speech region and one tail second (frames→seconds = f/FPS):
+ffmpeg -i "$VID" -ss <speech_region_start/FPS> -t 1 -af volumedetect -f null - 2>&1 | grep mean_volume
+ffmpeg -i "$VID" -ss <loop_tail_start/FPS>    -t 1 -af volumedetect -f null - 2>&1 | grep mean_volume
+```
+- **VO present & audible:** track is not silent; speech-region mean volume is clearly above the
+  loop-tail/gap mean. **FAIL** if the track is silent or speech regions aren't louder than the tail
+  (route → `05` audio layer / `04-audio.md`; check `vo.wav` was copied into `public/`).
+- **Music ducked under VO:** the bed must be measurably quieter *inside* speech than between words
+  (the envelope from `vo-timing.json`). Post-mix you can't isolate the bed, so judge by ear/level:
+  the **voice stays intelligible over the bed** the whole time. **FAIL** if the bed buries the voice
+  (route → `05` envelope wiring / `04-audio.md` duck levels).
+- **Captions aligned to the VO:** spot-check 2–3 words — extract the frame at a word's `start` frame
+  and confirm that word's caption is on screen. **FAIL if any spot-checked word is off by >±3 frames**
+  (route → `05` caption generation from `vo-timing.json`).
+```bash
+for f in <word1.start> <word2.start> <word3.start>; do
+  ffmpeg -loglevel error -i "$VID" -vf "select=eq(n\,$f),scale=540:960" -frames:v 1 "$QA/cap_$f.png"
+done   # read each PNG; the spoken word at that frame must be the highlighted caption
+```
+
 ## Output — write `08-render-qa.md` into the run folder
 ```markdown
 # 08 — Render QA (F-NNN) · file: <final.mp4>
@@ -103,6 +131,7 @@ ffmpeg -i final.mp4 -af ebur128=peak=true -f null - 2>&1 | tail -20
 | c. Brightness / black | ✅/❌ | mean YAVG <n>; black segs <list> | 03 bg depth, 05 frame-fill |
 | d. Per-beat (dead space / collision / hero / mechanic) | ✅/❌ | <per-beat notes> | 05 / 03 |
 | e. Loudness | ✅/❌ | <I> LUFS / <TP> dBTP | 04-audio master step |
+| f. Voiceover (present / ducked / caption-aligned) | ✅/❌ | speech vs tail mean vol; word-frame spot-checks | 05 audio+captions / 04-audio |
 **Verdict:** PASS / FAIL — <one line>. On FAIL: fix the routed spec file, regenerate downstream, re-render, re-run render-qa.
 ```
 

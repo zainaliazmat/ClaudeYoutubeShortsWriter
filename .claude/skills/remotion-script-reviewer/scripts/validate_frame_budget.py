@@ -23,6 +23,8 @@ Exit code 0 = no blocking errors, 1 = blocking errors found, 2 = could not parse
 Dependency-free (standard library only) so it runs anywhere.
 """
 
+import json
+import os
 import re
 import sys
 
@@ -30,6 +32,70 @@ import sys
 # em-dash, minus sign. Normalize them all so "0–45", "0-45", "0—45" parse alike.
 DASHES = "-–—−"
 DASH_CLASS = f"[{DASHES}]"
+
+# VO-driven flow: tts-voiceover patches the authoritative frame map (a table)
+# between these markers, and writes durationInFrames as `total` in vo-timing.json.
+FRAMEMAP_START = "<!-- FRAME-MAP:START -->"
+FRAMEMAP_END = "<!-- FRAME-MAP:END -->"
+
+
+def parse_vo_timing(script_path):
+    """If a sibling vo-timing.json exists (VO-driven run), read the authoritative
+    durationInFrames (`total`) and fps from it. Returns (total, fps) or (None,
+    None). Stdin input ('-') has no directory, so VO-total is unavailable there."""
+    if not script_path or script_path == "-":
+        return None, None
+    cand = os.path.join(os.path.dirname(os.path.abspath(script_path)),
+                        "vo-timing.json")
+    if not os.path.isfile(cand):
+        return None, None
+    try:
+        with open(cand, encoding="utf-8") as f:
+            data = json.load(f)
+        total = data.get("total")
+        fps = data.get("fps")
+        return (int(total) if total is not None else None,
+                float(fps) if fps is not None else None)
+    except (OSError, ValueError, TypeError):
+        return None, None
+
+
+# A frame-map table row: "| label | start | end | frames |". The Total row uses
+# **bold** digits ("| **Total** | **0** | **900** | **900** |") so its columns
+# aren't bare ints — it won't match — and the separator row is dashes. Both are
+# excluded naturally; we also skip any label containing "total" defensively.
+TABLE_ROW_RE = re.compile(
+    r"^\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|", re.IGNORECASE)
+
+
+def parse_framemap_table(text):
+    """Parse the VO-derived frame-map table BETWEEN the FRAME-MAP markers into
+    (label, start, end, line_no, raw) sections. Scoped to the marker block so
+    other tables in the script can't be mistaken for the frame map. Returns []
+    if the markers/table are absent (then the caller falls back to heading
+    ranges, the no-VO path)."""
+    if FRAMEMAP_START not in text or FRAMEMAP_END not in text:
+        return []
+    lines = text.splitlines()
+    in_block = False
+    sections = []
+    for i, line in enumerate(lines):
+        if FRAMEMAP_START in line:
+            in_block = True
+            continue
+        if FRAMEMAP_END in line:
+            break
+        if not in_block:
+            continue
+        m = TABLE_ROW_RE.match(line.strip())
+        if not m:
+            continue
+        label = m.group(1).strip()
+        if "total" in label.lower():
+            continue
+        sections.append((label, int(m.group(2)), int(m.group(3)),
+                         i + 1, line.strip()))
+    return sections
 
 
 def normalize(text):
@@ -139,11 +205,38 @@ def main():
     text = normalize(raw_text)
 
     seconds, frames, fps, total_raw = parse_total(text)
-    sections = parse_sections(text)
 
     errors = []   # blocking
     warnings = []  # non-blocking, worth surfacing
     notes = []    # informational
+
+    # --- VO-driven path: prefer the patched frame-map table + vo-timing.json ---
+    # When a Short carries a VO, the writer leaves frame ranges as a target and
+    # tts-voiceover patches the AUTHORITATIVE frame map (a table) between the
+    # FRAME-MAP markers, with durationInFrames stored as `total` in
+    # vo-timing.json. Tile that table against `total`. With no table present we
+    # fall back to the heading-range path (the no-VO special case), unchanged.
+    table_sections = parse_framemap_table(text)
+    vo_total, vo_fps = parse_vo_timing(path)
+    vo_mode = bool(table_sections)
+
+    if vo_mode:
+        sections = table_sections
+        if vo_total is not None:
+            frames = vo_total
+            total_raw = "vo-timing.json total=%d" % vo_total
+            seconds = None   # VO has no declared seconds; total/fps is exact
+            if vo_fps:
+                fps = vo_fps
+            notes.append("VO-driven: durationInFrames=%d read from vo-timing.json; "
+                         "tiling the patched frame-map table." % vo_total)
+        else:
+            warnings.append(
+                "Frame-map table present but no readable vo-timing.json beside the "
+                "script — tiling the table against the script's declared total. Run "
+                "tts-voiceover (step 3.5) so the total is authoritative.")
+    else:
+        sections = parse_sections(text)
 
     fps_used = fps if fps else 30.0
     if fps is None:
@@ -155,8 +248,9 @@ def main():
     # --- Check 1: declared total is internally consistent (F == round(N*fps)) ---
     if frames is None:
         errors.append(
-            "No total frame count found. The script must declare total runtime as both "
-            "seconds and frames (e.g. '28 s = 840 frames @ 30fps') so the budget is checkable."
+            "No total frame count found. For a VO short, run tts-voiceover (step 3.5) "
+            "so vo-timing.json defines the total; otherwise declare runtime as both "
+            "seconds and frames (e.g. '28 s = 840 frames @ 30fps')."
         )
     elif seconds is not None:
         expected = round(seconds * fps_used)
