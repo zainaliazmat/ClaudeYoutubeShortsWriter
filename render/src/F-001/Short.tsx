@@ -1,10 +1,22 @@
 import React from "react";
 import { AbsoluteFill, Sequence } from "remotion";
-import { COLORS, SCENES } from "./theme";
-import { Background } from "./Background";
+import { Background } from "../lib/Background";
+import { Captions } from "../lib/Captions";
+import { AudioBed } from "../lib/AudioBed";
+import type { Word } from "../lib/captions-core";
+import {
+  COLORS,
+  SCENES,
+  TOTAL,
+  Y,
+  WIDTH,
+  HEIGHT,
+  FPS,
+  CAPTION_STYLE,
+  AUDIO_SPEC,
+} from "./data";
+import voTiming from "./vo-timing.json";
 import { TimelineLayer } from "./TimelineLayer";
-import { Captions } from "./Captions";
-import { AudioBed } from "./AudioBed";
 import { Hook } from "./scenes/Hook";
 import { Beat1 } from "./scenes/Beat1";
 import { Beat2 } from "./scenes/Beat2";
@@ -14,19 +26,34 @@ import { Beat5 } from "./scenes/Beat5";
 import { Beat6 } from "./scenes/Beat6";
 import { LoopBack } from "./scenes/LoopBack";
 
-export type CleopatraProps = {
-  // Set true once the four licensed MP3s are placed in public/ (see AudioBed).
-  audio: boolean;
-};
+export type ShortProps = { audio: boolean };
 
-export const CleopatraShort: React.FC<CleopatraProps> = ({ audio }) => {
+// Duration comes from the VO timing contract, never a hardcoded const.
+export const calculateMetadata = () => ({
+  durationInFrames: voTiming.total,
+  fps: voTiming.fps ?? FPS,
+  width: WIDTH,
+  height: HEIGHT,
+});
+
+export const Short: React.FC<ShortProps> = ({ audio }) => {
+  const words = voTiming.words as Word[];
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.bgTop }}>
-      {/* Persistent layers (global frame) */}
-      <Background />
+      {/* Persistent depth background (never flat single-hex) */}
+      <Background
+        colors={{
+          bgTop: COLORS.bgTop,
+          bgBottom: COLORS.bgBottom,
+          glow: COLORS.glow,
+          nebula: COLORS.nebula,
+          star: COLORS.text,
+        }}
+        totalFrames={TOTAL}
+        heroY={Y.hero}
+      />
       <TimelineLayer />
 
-      {/* Per-scene text */}
       <Sequence from={SCENES.hook.from} durationInFrames={SCENES.hook.duration}>
         <Hook />
       </Sequence>
@@ -45,8 +72,7 @@ export const CleopatraShort: React.FC<CleopatraProps> = ({ audio }) => {
       <Sequence from={SCENES.beat5.from} durationInFrames={SCENES.beat5.duration}>
         <Beat5 />
       </Sequence>
-      {/* Beat 6 extends to frame 930 so its text can cross-dissolve out. */}
-      <Sequence from={SCENES.beat6.from} durationInFrames={930 - SCENES.beat6.from}>
+      <Sequence from={SCENES.beat6.from} durationInFrames={TOTAL - SCENES.beat6.from}>
         <Beat6 />
       </Sequence>
       <Sequence
@@ -56,10 +82,8 @@ export const CleopatraShort: React.FC<CleopatraProps> = ({ audio }) => {
         <LoopBack />
       </Sequence>
 
-      {/* Word-by-word captions (global frame, from vo-timing.json). */}
-      <Captions />
-
-      <AudioBed enabled={audio} />
+      <Captions words={words} style={CAPTION_STYLE} />
+      <AudioBed spec={AUDIO_SPEC} enabled={audio} />
     </AbsoluteFill>
   );
 };

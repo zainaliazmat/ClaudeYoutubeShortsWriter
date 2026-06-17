@@ -1,7 +1,7 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT } from "../theme";
-import { wordSlamIn, yearStampShake } from "../motion";
+import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT } from "../data";
+import { wordSlamIn, yearStampShake } from "../../lib/motion";
 
 // Deterministic thousands formatter (no locale dependence).
 export const withCommas = (n: number): string => {

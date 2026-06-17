@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT, MONO, Y } from "../theme";
-import { countUp, heroOvershoot } from "../motion";
+import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT, MONO, Y } from "../data";
+import { countUp, heroOvershoot } from "../../lib/motion";
 import { withCommas } from "./parts";
 
 // Shared gap-reveal beat (Beats 3 & 5). A live Space Mono counter ticks 0→target

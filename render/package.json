@@ -1,7 +1,7 @@
 {
-  "name": "CaludeRemotionShorts",
+  "name": "fathom-render",
   "version": "1.0.0",
-  "description": "My Remotion video",
+  "description": "Fathom Shorts Remotion renderer (shared lib + per-video scene codegen)",
   "repository": {},
   "license": "UNLICENSED",
   "private": true,
@@ -28,7 +28,9 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
+    "lint": "eslint src && tsc",
+    "test:lib": "node --experimental-strip-types --test src/lib/__tests__/*.test.ts",
+    "gate": "tsc && eslint src"
   },
   "sideEffects": [
     "*.css"

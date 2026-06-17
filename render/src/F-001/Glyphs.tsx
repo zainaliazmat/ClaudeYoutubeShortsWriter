@@ -1,6 +1,6 @@
 import React from "react";
 import { Rocket } from "lucide-react";
-import { COLORS } from "./theme";
+import { COLORS } from "./data";
 
 // Large FILLED silhouettes anchored on the vertical spine nodes (not tiny line
 // icons). Centered on (cx, cy). Soft glow via drop-shadow.

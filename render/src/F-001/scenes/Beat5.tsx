@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { COLORS, Y } from "../theme";
+import { COLORS, Y } from "../data";
 import { Kicker } from "./parts";
 import { GapReveal } from "./GapReveal";
 

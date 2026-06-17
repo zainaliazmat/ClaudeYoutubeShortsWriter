@@ -6,7 +6,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT, Y } from "../theme";
+import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT, Y } from "../data";
 
 // Scene 0 — Hook (frames 0–45). Frame 0 is FULLY LIT with the complete claim
 // (incl. "YOU") — no fade-in (fixes the v2 black-open). Only "YOU" emphasis

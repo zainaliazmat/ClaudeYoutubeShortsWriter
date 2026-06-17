@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { COLORS, Y } from "../theme";
+import { COLORS, Y } from "../data";
 import { Kicker, YearStamp } from "./parts";
 
 // Scene 4 — Beat 4 (global 493–592). "THE MOON LANDING" + "1969" (ice).

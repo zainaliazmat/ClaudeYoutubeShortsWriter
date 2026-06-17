@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT } from "../theme";
-import { crossDissolve, heroOvershoot, payoffGlow, wordSlamIn } from "../motion";
+import { ANTON, COLORS, CONTENT_LEFT, CONTENT_RIGHT } from "../data";
+import { crossDissolve, heroOvershoot, payoffGlow, wordSlamIn } from "../../lib/motion";
 
 // Scene 6 — Beat 6 / Payoff (global 702–855, sequence extended to 930 for the
 // cross-dissolve). The two gaps (2,500 vs 2,000) flash, a shared-baseline

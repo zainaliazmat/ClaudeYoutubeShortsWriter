@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { crossDissolve } from "../motion";
+import { crossDissolve } from "../../lib/motion";
 import { Hook } from "./Hook";
 
 // Scene 7 — Loop-Back (global 855–930). The frozen Hook fades in over the full

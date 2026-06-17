@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { COLORS, Y } from "../theme";
+import { COLORS, Y } from "../data";
 import { Kicker, YearStamp } from "./parts";
 
 // Scene 1 — Beat 1 (global 109–259). "THE GREAT PYRAMID" + "2560 BC".

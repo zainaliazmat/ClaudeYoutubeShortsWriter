@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { COLORS, Y } from "../theme";
+import { COLORS, Y } from "../data";
 import { Kicker, YearStamp } from "./parts";
 
 // Scene 2 — Beat 2 (global 259–397). "EGYPT'S LAST QUEEN · CLEOPATRA" + "69 BC".

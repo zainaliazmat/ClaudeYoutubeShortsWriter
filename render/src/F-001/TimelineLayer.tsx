@@ -13,9 +13,9 @@ import {
   PYRAMID_Y,
   SPINE_W,
   SPINE_X,
-} from "./theme";
+} from "./data";
 import { MoonGlyph, PyramidGlyph, RocketGlyph } from "./Glyphs";
-import { nodeNudge, payoffGlow, segmentGrow } from "./motion";
+import { nodeNudge, payoffGlow, segmentGrow } from "../lib/motion";
 
 // The vertical timeline — the spine of every scene. Global frame so furniture
 // accumulates and stays put. SCALE-HONEST: node positions computed from the
