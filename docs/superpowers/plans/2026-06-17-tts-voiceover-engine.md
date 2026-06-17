@@ -1197,3 +1197,286 @@ returned per-word `(start_s, end_s)` contract. If the build's native timing isn'
 the aeneas fallback path (gated by the §3.6 failure detector) carries it. Also note `soundfile` +
 `numpy` are needed to write the WAV (`pip install soundfile numpy`).
 ```
+
+---
+
+<!-- AUTONOMOUS DECISION LOG -->
+# /autoplan Review (post-implementation, full pipeline — user chose option B)
+
+> Run context: this plan was already fully implemented + committed (HEAD 1897fb8) when
+> /autoplan ran. Codex unavailable (binary not installed) → all dual voices are
+> `[subagent-only]`. 34 unit tests pass, 1 gated e2e self-skips (Kokoro not installed).
+
+## Phase 1 — CEO Review (mode: SELECTIVE EXPANSION)
+
+### 0A. Premise Challenge
+Premises this plan rests on:
+- **P1 — Narration is the missing ingredient.** Driver = "F-001 v3 rendered well but feels
+  empty/silent." ASSUMED, not measured: no retention data, no A/B. Could be the *visuals* are
+  sparse (the spec itself adds "denser visuals") or the hook is weak — TTS fixes neither.
+- **P2 — VO must drive the frame map.** Reasonable: voice is a natural pacing spine. Low risk.
+- **P3 — Kokoro local/free is the right engine.** Bets the load-bearing timing on Kokoro's
+  *undocumented, version-variable* native token timing (Task 7 + Self-Review both concede this).
+- **P4 — Synthetic voice is worth the AI-disclosure flip.** Asserted in §6, never weighed against
+  reach suppression or "generic AI-narration" fatigue on faceless channels.
+- **P5 — Plan-1-as-engine-only is a sound increment.** Nothing user-visible ships until Plans 2-3;
+  the only reality-touching test (e2e) self-skips and is never required to run.
+
+### 0B. Existing Code Leverage
+Greenfield skill; nothing to reuse except the existing `/short` pipeline contracts (02-script.md
+markers, vo-timing.json consumed later by remotion-prompt-generator + validator). Pure-function
+split (normalize/timing/failure_detector/envelope/framemap = stdlib only) is the right call:
+testable with zero install. No rebuild of existing functionality. Clean.
+
+### 0C. Dream-state delta
+CURRENT: silent Shorts, hand-pinned frame maps.
+THIS PLAN: a local VO engine + integer-frame timing contract (not yet wired into the pipeline).
+12-MONTH IDEAL: every /short auto-narrates with synced captions + ducked music, retention-validated.
+Delta: moves toward the ideal IF the voice clears the retention bar AND Plans 2-3 wire it in.
+Risk: stranded engine if the premise (P1/P4) is wrong.
+
+### 0C-bis. Implementation alternatives (retrospective)
+- A: Kokoro native timing + aeneas fallback (CHOSEN/BUILT). Free, offline; bets on undocumented API.
+- B: aeneas-primary forced alignment. More robust word timing; drops the "exact-by-construction" framing.
+- C: Paid TTS (ElevenLabs) with API-provided word timestamps. Best voice + reliable timing; ~cents/video, breaks the no-paid-API ethos.
+RECOMMENDATION (retrospective): A is defensible for ethos/cost, but the Kokoro-timing spike should
+have preceded the build (see Eng finding). The §3.6 detector + fallback are the right safety net.
+
+### 0E. Temporal interrogation
+Already implemented, so HOUR-1..6 ambiguities are resolved in code. The one that bit: wav length
+measured AFTER synth (fixed in a4eb306), fallback catching a raising primary (fixed cb943ea).
+
+### 0F. Mode
+SELECTIVE EXPANSION, auto-selected per autoplan. No new scope auto-added (P2 boil-lakes: the one
+actionable expansion — fix the coverage check — is a bugfix routed to Eng, not a scope add).
+
+### CEO DUAL VOICES — CONSENSUS TABLE
+```
+  Dimension                            Claude-subagent  Codex        Consensus
+  ──────────────────────────────────── ───────────────  ──────────   ─────────
+  1. Premises valid (stated not assumed)?  NO (P1/P4)    N/A (unavail) flagged
+  2. Right problem to solve?               UNVALIDATED   N/A           flagged
+  3. Scope calibration correct?            RISK (stranded) N/A         flagged
+  4. Alternatives explored enough?         NO (§7 by fiat) N/A         flagged
+  5. Competitive/market risk covered?      NO             N/A          flagged
+  6. 6-month trajectory sound?             CONDITIONAL    N/A           flagged
+```
+Codex column N/A (binary not installed). Single-voice findings flagged regardless.
+
+### Sections 1-10 (auto-decided; examined, nothing CEO-blocking beyond the premise gate)
+- S1 Problem/outcome: covered above (P1 unvalidated — surfaced at premise gate).
+- S2 Error/rescue: §3.6 detector + 2-strike abort is a named, visible failure path. Good. (Eng will
+  stress the coverage-check correctness.)
+- S3 Scope discipline: tight; Plans 2-3 deferrals explicit. No silent scope.
+- S4 Security: local-only, no network except HF weight download + ffmpeg/espeak subprocess on
+  trusted local text. No untrusted input. Low surface. (Eng will check subprocess arg handling.)
+- S5 Observability: preflight prints missing deps; failure detector returns reasons[]. Adequate for a CLI.
+- S6 Deploy/rollback: artifacts committed once, never re-synthesized (spec risk row). OK.
+- S7 DRY: no duplication; single round-to-frames in build_timing. Clean.
+- S8-10 (data model / 6-month / better-approach): the "spike Kokoro timing before betting on it"
+  point is the one real better-approach note — moot now (built), but informs whether to trust the
+  primary path before Plans 2-3.
+
+### CEO mandatory outputs
+- NOT in scope: pipeline wiring, CLAUDE.md edits, denser visuals, F-001 v4 (Plans 2-3). Correct.
+- What already exists: nothing reusable; greenfield skill.
+- Failure modes: §3.6 detector (monotonicity, coverage, duration, token-count) + 2-strike abort.
+  CRITICAL GAP candidate → coverage check (routed to Eng Phase 3).
+
+### PREMISE GATE RESULT (user decision)
+**A — Validate before wiring.** Before Plans 2-3, hand-cut ONE video through the built engine
+(real Kokoro vo.wav + synced captions), ship it, compare 7-day retention vs silent F-001 v3. This
+also force-runs the gated e2e test (currently self-skipping), proving Kokoro native token timing on
+the real machine — closing the load-bearing risk before further investment.
+
+## Phase 3 — Eng Review (FULL REVIEW)
+
+### Section 1 — Architecture (ASCII)
+```
+02-script.md (NARRATION markers)
+        │  _parse_narration (run.py)
+        ▼
+   normalize_narration ──► spoken_text + tokens[]   (normalize.py, pure)
+        │
+        ▼
+   align_with_fallback (run.py)
+        ├─ primary:  synth_and_durations ─► Kokoro ─► native token ts ─► _trim_silence ─► vo.wav   (kokoro_io.py, I/O)
+        └─ fallback: aeneas_align(vo.wav)                                                            (kokoro_io.py, I/O)
+        │            └─ each candidate gated by check_alignment  (failure_detector.py, pure)  ◄── C1 ABORTS HERE
+        ▼
+   build_timing ──► words[] beats[] speech_regions[] (integer frames, round ONCE)  (timing.py, pure)
+        ├─► build_duck_envelope ─► envelope[]                                       (envelope.py, pure)
+        ├─► json.dump ─► vo-timing.json
+        └─► render_frame_map_table + patch_script_frame_map ─► 02-script.md         (framemap.py, pure)
+```
+Module separation is clean: one I/O shell (kokoro_io), pure logic everywhere else. Coupling is low,
+dependency direction is correct (run.py depends on pure modules + the I/O shell; nothing depends on run).
+
+### ENG DUAL VOICES — CONSENSUS TABLE
+```
+  Dimension                       Claude-subagent     Codex          Consensus
+  ──────────────────────────────  ──────────────────  ───────────    ─────────
+  1. Architecture sound?          YES (clean split)   N/A (unavail)  CONFIRMED (single voice)
+  2. Test coverage sufficient?    NO (gapless only)   N/A            flagged
+  3. Performance risks?           none material       N/A            n/a
+  4. Security threats covered?    low surface, OK*     N/A            ok (*see S4)
+  5. Error paths handled?         NO (C1 false-abort) N/A            flagged
+  6. Deployment risk manageable?  YES (commit-once)   N/A            CONFIRMED
+```
+Codex N/A. C1 independently surfaced by BOTH the CEO subagent (strategy pass) and the Eng subagent
+→ cross-phase high-confidence signal, then empirically reproduced against shipped code.
+
+### Findings registry (severity | file:line | fix)
+- **C1 CRITICAL — failure_detector.py check_alignment coverage.** `sum(word durations)` vs wav length
+  ±5% is structurally wrong for gapped speech. EMPIRICALLY REPRODUCED: realistic 80-word/30s VO →
+  56.8% coverage → "coverage off" → both primary+fallback fail → `RuntimeError`. The engine aborts on
+  the FIRST real Short. Fix: measure SPAN coverage `words[-1].end - words[0].start` vs wav length (this
+  detects dropped/merged words, the real intent), or check only an uncovered head/tail; loosen tol.
+  **Also amend spec §3.6.2** (the spec wording is itself wrong). Add a gapped-timing test.
+- **M1 MEDIUM — timing.py build_timing.** Sub-frame word (rounded start==end) → 0-frame duration →
+  trips `min_w=2` "implausible duration" → abort. REPRODUCED ("of" → 0f). Compounds C1. Fix:
+  `end = max(end, start+1)` clamp in build_timing (then re-enforce monotonicity).
+- **H2 HIGH — kokoro_io.py _trim_silence.** Takes the FIRST `silence_end` as leading silence; if audio
+  opens on speech, that's an INTERIOR pause → subtracts a wrong offset from all Kokoro token ts →
+  corrupt timing. Fix: only treat it as lead if the matching `silence_start ≈ 0`; else lead=0.
+- **H3 HIGH — kokoro_io.py:85-102.** ffmpeg subprocess returncodes never checked; a failed trim yields
+  an empty/missing wav and the code proceeds → opaque crash in _wav_len_frames. Fix: check=True / inspect
+  returncode + assert getsize>0; force `-c:a pcm_s16le`.
+- **H1 HIGH (design clarity) — run.py align_with_fallback + fallback.** aeneas fallback can NEVER rescue
+  a total Kokoro failure (no vo.wav → fallback raises). Intended (aeneas needs audio) but the spec/comment
+  oversell it as first-class for any "line failing." Fix: document "covers audio-OK/timing-bad only" OR
+  split synth (write wav) from token-timing so aeneas can run on a wav from a timing-only failure.
+- **M2 MEDIUM — timing.py:45-46.** `nxt.start = prev.end` can push a beat's start past frames of a word
+  tagged to that beat (violates spec "beat.start = first word frame"). Fix: enforce word-level
+  monotonicity (clamp w.start = max(w.start, prev_w.end)) before beat partition.
+- **M3 MEDIUM — run.py _wav_len_frames.** stdlib `wave` raises on non-PCM/float wav. Usually safe (ffmpeg
+  writes PCM) but fragile. Fix: try/except → ffprobe duration fallback, or force pcm_s16le.
+- **M4 MEDIUM — kokoro_io.py aeneas_align.** temp txt (`delete=False`) only unlinked on success → /tmp
+  leak on every aeneas raise. Fix: try/finally unlink.
+- **M5 LOW — run.py:35 _parse_narration.** `open(...).read()` no context manager → ResourceWarning
+  (observed in tests). Fix: `with open(...) as f:`.
+
+### Spec conformance
+§3.5 schema, §3.3 round-once, §4 envelope shape, §3.3 frame-map write-back, §3.4 preflight: IMPLEMENTED
+CORRECTLY. §3.6.2 coverage: spec drift INTO a guaranteed abort (C1) — fix code AND spec. §3.2 overrun
+cycle (raise speed / loop to writer): not implemented in run() — documented-but-manual, acceptable as an
+operator step but note the drift from "a real cycle."
+
+### Eng mandatory outputs
+- NOT in scope: pipeline wiring, overrun auto-cycle, denser visuals (Plans 2-3). Correct.
+- What already exists: greenfield; nothing reused.
+- CRITICAL GAP: C1 coverage check — engine aborts on first real Short. Test gap T1/T2 hides it (all
+  tests use gapless toy timings; the real synth path only has a self-skipping e2e).
+- Test plan artifact: ~/.gstack/projects/zainaliazmat-ClaudeYoutubeShortsWriter/zain-fix-short-pipeline-visual-quality-test-plan-20260617-180623.md
+
+## Phase 3.5 — DX Review (DX POLISH; persona: agent/operator + fresh-machine maintainer)
+
+### Developer journey map (9-stage)
+| Stage | Now | Friction |
+|---|---|---|
+| Discover | SKILL.md (user-invocable:false; pipeline-only) | OK |
+| Install | NOWHERE documented; real pip line lives only in dead preflight strings | **HIGH (1.2/5.1)** |
+| First run | `python3 scripts/run.py <run_dir> [voice]` | no usage; no-args = IndexError/ModuleNotFound |
+| Hello-world (vo.wav) | needs kokoro+misaki+espeak-ng+ffmpeg+soundfile+numpy | undocumented hard deps (soundfile/numpy) |
+| Error: missing dep | sees `RuntimeError: alignment failed on both primary and fallback` | **CRITICAL — misdirects to script/voice, not env** |
+| Error: bad/no voice | `voice=None` → `None[0]` TypeError deep in synth | **HIGH (3.2)** |
+| Tune | run() has fps/speed; CLI exposes neither | **MEDIUM (4.1)** |
+| Fix loop | can't tell install vs cut-words vs bad-voice from the message | **HIGH (6.1)** |
+| Upgrade | n/a (greenfield) | OK |
+
+### Developer empathy narrative (first person)
+"I clone the repo, read SKILL.md — it says run.py will preflight and print install steps. I run it.
+I get `ModuleNotFoundError: scripts` (cwd) or, once cwd is right, `RuntimeError: alignment failed on
+both primary and fallback`. Alignment? I didn't write any alignment. I burn 20 minutes poking the
+script and the voice name before I open kokoro_io.py and discover I never installed `kokoro` — and
+also need `soundfile`/`numpy` that nothing told me about. The one function that would have told me
+(`preflight`) is never called."
+
+### DX DUAL VOICES — CONSENSUS TABLE
+```
+  Dimension                       Claude-subagent     Codex          Consensus
+  ──────────────────────────────  ──────────────────  ───────────    ─────────
+  1. Getting started < 5 min?     NO (2/10)           N/A (unavail)  flagged
+  2. API/CLI naming guessable?    PARTIAL (7/10 name) N/A            ok-ish
+  3. Error messages actionable?   NO (2/10)           N/A            flagged
+  4. Docs findable & complete?    NO (3/10)           N/A            flagged
+  5. Upgrade path safe?           n/a (greenfield)    N/A            n/a
+  6. Dev env friction-free?       NO (preflight dead) N/A            flagged
+```
+
+### DX Scorecard (0-10): Getting-started 2 | Error msgs 2 | CLI ergonomics 2 | Naming 7 | Docs 3 | Escape hatches 3 → overall ~3.2/10
+TTHW: undefined (∞ until you read source) → target < 5 min with an Install section + wired preflight.
+
+### Findings (severity | file:line | fix)
+- **DX-C1 CRITICAL — preflight() is dead code (VERIFIED: zero callers in run.py).** SKILL.md:23-24
+  documents a preflight step that never runs. Fix: call `preflight(voice, need_aligner=True)` in
+  `__main__` AND at the top of `run()`; on `not ok`, print each missing[] line to stderr and exit 1.
+- **DX-C2 CRITICAL — missing-dep surfaces as misdirecting `RuntimeError: alignment failed...`**
+  (run.py:22-23 `except Exception: continue` swallows KokoroUnavailable twice; final raise at :28 has
+  no cause). Fix: let KokoroUnavailable propagate (don't `continue` on it) and/or `raise ... from last_exc`.
+- **DX-H1 HIGH — install path documented nowhere actionable.** Fix: add `## Install` to SKILL.md:
+  `pip install kokoro misaki soundfile numpy`, `apt-get install espeak-ng ffmpeg`, optional `aeneas`.
+- **DX-H2 HIGH — soundfile + numpy are undocumented hard deps AND not probed by preflight**
+  (kokoro_io.py:49-50 import them; preflight:26 only probes kokoro). Fix: add to install docs + preflight probe.
+- **DX-H3 HIGH — CLI: no argparse/--help/usage; no-args crashes; voice omitted → None[0] TypeError**
+  (run.py:96-98; kokoro_io.py:54). Fix: argparse with positional run_dir, optional voice/--fps/--speed,
+  default `voice or "am_michael"`, validate against KNOWN_VOICES.
+- **DX-H4 HIGH — abort message doesn't say install vs cut-words vs bad-voice** (run.py:28; SKILL.md:38-39
+  defines two opposite remedies that collapse to one message; the overrun→writer path isn't implemented).
+  Fix: distinct messages per cause (ties to DX-C1/C2 + Eng H1).
+- **DX-M1 MEDIUM — fps/speed unreachable from CLI** (run.py:98). Fix: expose via argparse.
+- **DX-M2 MEDIUM — ffmpeg failures silently ignored** (kokoro_io.py:98-102; = Eng H3).
+- **DX-L1 LOW — speed direction undocumented; aeneas-is-hard-to-install not noted.**
+
+### DX mandatory outputs
+- TTHW target: < 5 min via Install section + wired preflight.
+- DX Implementation Checklist: wire preflight (C1) → fix swallowed-cause error (C2) → Install section +
+  soundfile/numpy (H1/H2) → argparse + voice default/validate (H3) → distinct abort messages (H4).
+
+## Decision Audit Trail
+| # | Phase | Decision | Class | Principle | Rationale |
+|---|-------|----------|-------|-----------|-----------|
+| 1 | Phase 0 | Run full pipeline on already-built plan | User-directed | — | User chose option B |
+| 2 | Phase 0 | Skip Phase 2 (Design) | Mechanical | — | No UI scope (Python+CLI) |
+| 3 | Phase 0 | Skip /office-hours offer | Mechanical | P3 | Pre-build tool; code already shipped |
+| 4 | Phase 1 | Mode = SELECTIVE EXPANSION | Mechanical | — | autoplan default |
+| 5 | Phase 1 | Premise gate → user | Gate (not auto) | — | Premises require human judgment → user chose A (validate first) |
+| 6 | Phase 1 | No scope auto-added | Mechanical | P2/P4 | Only actionable item is a bugfix (C1), routed to Eng |
+| 7 | Phase 3 | C1 = CRITICAL blocker | Mechanical | P1 | Empirically reproduced; engine aborts on first real Short |
+| 8 | Phase 3 | C1 fix = span-coverage (not loosen-tol) | Taste | P5 | Explicit: detects the real intent (dropped/merged words) |
+| 9 | Phase 3 | All 9 eng findings in-blast-radius, <1d CC → fix | Mechanical | P2 | Bugfixes in files this plan owns |
+| 10 | Phase 3.5 | DX-C1 (wire preflight) = CRITICAL | Mechanical | P1 | Documented behavior doesn't exist; misdirects every env error |
+
+## Cross-Phase Themes (flagged independently in 2+ phases — high-confidence)
+- **Theme A: the engine aborts before producing anything (C1).** CEO #8 + Eng C1, then reproduced.
+  A realistic 30s VO → 56.8% coverage → RuntimeError. This is the headline.
+- **Theme B: errors lie about their cause.** Eng H1 (fallback oversold) + DX-C2 (missing dep →
+  "alignment failed") + DX-C1 (dead preflight). Every environment problem disguises itself.
+- **Theme C: nothing has actually run end-to-end.** CEO #2 (stranded engine) + Eng T2 (synth path only
+  in a self-skipping e2e) + DX (no real vo.wav ever produced). The premise-gate choice (A) directly
+  attacks this: the validation video forces the first real run.
+
+---
+
+## GSTACK REVIEW REPORT
+
+| Phase | Run | Status | Findings |
+|-------|-----|--------|----------|
+| CEO (strategy) | subagent-only (codex unavailable) | issues_open | 8 (2 critical strategic) — premise gate → A |
+| Design | skipped | n/a | no UI scope |
+| Eng (architecture/test/correctness) | subagent-only | issues_open | C1 critical (reproduced) + 8 (2 high, 4 med, 1 low) |
+| DX (developer experience) | subagent-only | issues_open | 2 critical + 4 high + 3 med/low; scorecard ~3.2/10 |
+
+**Blocker:** C1 (failure_detector coverage check) — empirically reproduced: the engine raises
+`RuntimeError("alignment failed on both primary and fallback")` on the first realistic narration. M1
+(0-frame word) and DX-C1/C2 (dead preflight + cause-swallowing) compound it. These are NOT caught by
+the current tests, which use only gapless toy timings.
+
+VERDICT: CHANGES REQUESTED. The pure-logic core, module separation, and timing/envelope math are
+genuinely good and spec-correct. But the engine cannot complete a single real Short as shipped (C1),
+and its developer surface misdirects every environment error (DX-C1/C2). Per the premise-gate
+decision (A: validate before wiring), C1 + M1 are prerequisites — the validation video will abort
+without them. CODEX: unavailable for this run. CROSS-MODEL: not absorbed (single voice).
+
+**UNRESOLVED DECISIONS:**
+- Whether to apply the C1/M1/DX-C1 fixes now (so the validation video can run) or record-only — pending Final Gate (D3).
