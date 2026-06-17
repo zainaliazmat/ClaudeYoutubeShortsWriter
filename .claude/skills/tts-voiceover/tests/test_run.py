@@ -26,5 +26,19 @@ class TestAlignFallback(unittest.TestCase):
                                 fallback=lambda: self.bad,
                                 tokens=self.tokens, fps=30, wav_len_frames=18)
 
+    def test_falls_back_when_primary_raises(self):
+        def boom():
+            raise RuntimeError("primary unavailable")
+        out = align_with_fallback(primary=boom, fallback=lambda: self.good,
+                                  tokens=self.tokens, fps=30, wav_len_frames=18)
+        self.assertEqual(out, self.good)
+
+    def test_raises_when_both_raise(self):
+        def boom():
+            raise RuntimeError("x")
+        with self.assertRaises(RuntimeError):
+            align_with_fallback(primary=boom, fallback=boom,
+                                tokens=self.tokens, fps=30, wav_len_frames=18)
+
 if __name__ == "__main__":
     unittest.main()
