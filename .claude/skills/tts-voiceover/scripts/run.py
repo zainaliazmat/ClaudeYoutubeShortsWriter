@@ -127,12 +127,23 @@ def _cli(argv=None):
         p.error("unknown voice %r. Known voices: %s"
                 % (args.voice, ", ".join(sorted(KNOWN_VOICES))))
 
-    pf = preflight(args.voice, need_aligner=True)
+    # The Kokoro native-timing path is PRIMARY; aeneas is only the fallback
+    # aligner (and is hard to build). So don't hard-require it — preflight the
+    # primary deps, and just NOTE whether the fallback is available. If the
+    # primary path later fails AND aeneas is missing, the run aborts with a
+    # clear error from align_with_fallback (never ships bad/faked sync).
+    pf = preflight(args.voice, need_aligner=False)
     if not pf["ok"]:
         sys.stderr.write("tts-voiceover preflight failed -- install/fix:\n")
         for m in pf["missing"]:
             sys.stderr.write("  - %s\n" % m)
         sys.exit(1)
+    try:
+        import aeneas  # noqa: F401
+    except Exception:
+        sys.stderr.write("note: aeneas fallback aligner not installed; relying on "
+                         "Kokoro native timing (primary). The run aborts if that "
+                         "fails the §3.6 detector.\n")
 
     out = run(args.run_dir, fps=args.fps, voice=args.voice, speed=args.speed)
     print("vo-timing.json total=%d frames, %d beats"
