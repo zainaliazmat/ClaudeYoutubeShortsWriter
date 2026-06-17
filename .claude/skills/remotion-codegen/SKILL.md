@@ -27,7 +27,7 @@ layout/scene logic only — importing every proven primitive from the shared lib
 
 ## The shared library (import from `render/src/lib/`, never reimplement)
 - `motion.ts` — `wordSlamIn, heroOvershoot, yearStampShake, countUp, segmentGrow, nodeNudge, payoffGlow, crossDissolve`. All take a LOCAL (scene-relative) frame. `countUp` is clamped ≥ 0.
-- `Background.tsx` — `<Background colors={{bgTop,bgBottom,glow,nebula,star}} totalFrames heroY? starCount? />`. Gradient + breathing glow + nebula + drifting stars. **Use it — it is the structural guarantee the bg is never a flat single hex.**
+- `Background.tsx` — `<Background colors={{bgTop,bgBottom,glow,nebula,star}} totalFrames heroY? starCount? loopSafe? />`. Gradient + breathing glow + nebula + drifting stars. **Use it — it is the structural guarantee the bg is never a flat single hex.** Pass **`loopSafe`** (audit #4) so the drift + glow return to frame-0 state at `total` for an invisible loop.
 - `Captions.tsx` — `<Captions words={voTiming.words} style={CaptionStyle} />`. Word-by-word; the merge/override/accent rules live in `captions-core.ts` (consecutive same-`display` + same-`beat` merge; `overrides` re-skin a display before merge; numerics/`BC` carry the side accent). Pass `accentBBeats` for the second-side beats.
 - `AudioBed.tsx` — `<AudioBed spec={AudioSpec} />`. VO lead + envelope-ducked music + SFX cues. `spec = { vo, voVolume?, music, envelope:[{frame,volume}], sfx:[{file,from,durationInFrames,volume}] }`.
 - `safeArea.ts` — `WIDTH, HEIGHT, FPS, SAFE_TOP, SAFE_BOTTOM, SAFE_INSET_X, BANDS, QUALITY_FLOORS, hexLuma, gradientLuma`.
@@ -37,6 +37,7 @@ layout/scene logic only — importing every proven primitive from the shared lib
 ## Output (write under `render/src/F-NNN/` — `NNN` from the run id)
 1. `vo-timing.json` — **copy** the run's file here (the composition reads `total`/`fps`/`words`/`envelope` from it).
 2. `data.ts` — resolved tokens ONLY (no JSX): `COLORS`, font families (loaded via `@remotion/google-fonts/*`), geometry, the per-scene frame ranges `SCENES` (from the frame-map / `beats[]`), `CAPTION_STYLE`, `AUDIO_SPEC`, and `TOTAL = voTiming.total`. **Never declare a `DURATION`/duration constant** — duration comes from `calculateMetadata`.
+   - `scenes.json` — the scene-order contract `data.ts` imports and `check-tiling.mjs`/precheck read: `{ "schemaVersion": 1, "order": [{ "name", "from" }, …] }`. **Must carry `"schemaVersion": 1`** (audit #8) — precheck gates on it.
 3. `<Short>.tsx` — the root component: `<Background>` + persistent furniture + per-scene `<Sequence>`s + `<Captions>` + `<AudioBed>`. Export a `calculateMetadata` returning `{ durationInFrames: voTiming.total, fps: voTiming.fps, width: WIDTH, height: HEIGHT }`.
 4. `scenes/*.tsx` and any per-video layers (timeline, glyphs) — the bespoke layout for THIS video, importing motion from `lib/motion` and tokens from `../data`.
 5. Register the composition in `render/src/Root.tsx`:
@@ -58,7 +59,7 @@ These are non-negotiable; render-qa is the pixel backstop, but codegen must not 
 - **Count-up:** `countUp` reveals ≤ `QUALITY_FLOORS.countUpMaxFrames` (~36f) ease-out then hold; values clamped ≥ 0 (lib already clamps).
 - **Data-viz scale-honesty:** compute geometry FROM the verified values (px-per-unit), never hand-pick pixel lengths; the length ratio must equal the data ratio. Label any deliberate exaggeration.
 - **Captions:** clear the bottom gutter (`QUALITY_FLOORS.captionBottomGutterPx`) and the top; the lib component handles this.
-- **Loop seam:** the last scene cross-dissolves back to the frame-0 composition (state at `total` == state at 0).
+- **Loop seam (audit #4):** the last scene cross-dissolves back to the frame-0 composition AND the **persistent furniture must itself return to its frame-0 state at `total`** — an overlaid frozen Hook is not enough if the background/timeline underneath is still mid-animation. Pass **`loopSafe`** to `<Background>` (uses `loopSafeDrift`/`loopSafePulse` so the star drift + glow pulse land back at their frame-0 values), and drive any custom persistent layer (timeline progress, motif) with the same loop-safe primitives from `lib/motion`. Verify with the qa-probe seam check (state at `total` == state at 0).
 
 ## Gate (run after writing — all must pass; this is the codegen exit)
 ```bash
