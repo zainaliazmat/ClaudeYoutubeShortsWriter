@@ -16,10 +16,12 @@ Inputs (paths passed by the orchestrator): the run folder `output/F-NNN-<slug>/`
 
 The goal is a **recognizable, repeatable Fathom type/color/motion signature** (per NICHES.md, defensibility = a consistent signature). Specify, don't download:
 
-- **Font stack:** 1 display/heading face + 1 numeric/mono face if numbers feature. Prefer variable Google Fonts (free, self-hostable) — e.g. a heavy grotesque for hooks. Give exact family names, weights, and the `@remotion/google-fonts` package name. Keep it consistent with prior episodes if a signature exists (check `content/scripts/`).
-- **Color palette:** exact hex values — background, primary text, accent/highlight, and a "reveal" color. Ensure WCAG-strong contrast for burned-in captions. Note the ocean/"Fathom" brand leaning (deep blues) — check `Branding/`.
-- **Motion signature:** the recurring entrance/emphasis behavior (e.g. word slam-in via spring, highlight wipe, count-up). Give concrete Remotion intent: animation type, frame duration, easing/spring feel, scale range. These become the reviewer's feasibility checks.
-- **Icons / background (only if a beat needs one):** prefer pure-CSS/SVG shapes or a free no-attribution icon set (e.g. Lucide/Phosphor — MIT). Record source + license. **Screen for trademarks, logos, identifiable faces** — flag and replace if found. Default to NO imagery; typography should carry it.
+- **Font stack:** 1 display/heading face for IMPACT at large sizes + 1 numeric/mono face if numbers feature. For hero words choose a **high-impact display/condensed face** (e.g. Anton, Archivo Black, Montserrat 800/900, Clash Display) — "generic body grotesque at default tracking" is a deduction; give a one-line rationale for why the face suits the channel mood. Keep a **tabular/monospace** figure face for count-ups so digits don't jitter width, but **tighten its letter-spacing on large numbers** (wide default mono tracking reads dated). Give exact family names, weights, and the `@remotion/google-fonts` package name; prefer free, self-hostable Google Fonts. Keep it consistent with prior episodes if a signature exists (check `content/scripts/`).
+- **Color palette:** exact hex values — background, primary text, accent/highlight, and a "reveal" color. The **background must have depth — never a flat single-hex near-black**: specify a subtle vertical gradient, faint grain, or a low-opacity nebula/texture. The accent AND reveal colors must have **real chroma and contrast** so the decorative layer reads as intentional design, not a muted wash. State the caption contrast ratio AND a one-line **"does this pop on a phone at arm's length?"** rationale. Note the ocean/"Fathom" brand leaning (deep blues) — check `Branding/`.
+- **Motion signature:** the recurring entrance/emphasis behavior (e.g. word slam-in via spring, highlight wipe, count-up). Give concrete Remotion intent: animation type, frame duration, easing/spring feel, scale range. These become the reviewer's feasibility checks. Keep count-ups **short (~0.8–1.2s / 24–36f) with an ease-OUT** (fast start, decelerate to land), then hold — long slow-start counters read as sluggish dead air.
+- **Visual richness (earn the frame):** typography leads, but a 9:16 frame is large — fill it. Specify **at least one** per video: (a) a **depth background** (subtle gradient / faint grain / low-opacity nebula or texture — never flat single-hex black), (b) one or two **LARGE motif elements** (e.g. a 400–700px moon disc, a pyramid silhouette) as background/anchor layers — **not 36–48px line-icons** that vanish at viewing size, (c) a **hero-scale type treatment** (primary numbers/words sized to dominate, ≥ ~280px). Tiny decorative icons as the *only* visual aren't "clean," they're empty — avoid. For comparison/data-viz beats, prefer a **thick bar/shape that grows** (proportional to the values) over hairline strokes.
+- **Denser visuals for VO pacing (design §5):** the VO buys ~30s of attention — fill the empty bands so it never reads as static. For timeline/comparison shorts specify: (a) **date ticks + era labels** along the spine (e.g. "Old Kingdom", "Ptolemaic", "Space Age") to fill the right/empty bands; (b) a **stronger side-by-side comparison beat** — show the competing gaps as two bars from a shared baseline (not only collinear) so the difference reads at a glance; (c) **brighter rest-state fills** on motif shapes (the v3 pyramid was muddy until the payoff — give it a lit fill from frame 0). These are per-beat anchors the prompt-generator turns into layers.
+- **Icons / background:** prefer pure-CSS/SVG shapes, **large filled silhouettes**, or a free no-attribution icon set (e.g. Lucide/Phosphor — MIT) rendered **large** (≥200px) as anchor/background elements, not tiny markers. Record source + license. **Screen for trademarks, logos, identifiable faces** — flag and replace if found.
 
 ## B. `04-audio.md` — music + SFX (monetization-safe)
 
@@ -28,7 +30,7 @@ Follow `references/audio-sources.md` for the source policy and `references/audio
 1. Search the allowed libraries (YouTube Audio Library, Pixabay, Uppbeat free) for a track matching the script's energy/tempo and runtime.
 2. Record per pick: **title, artist, source library, direct URL, license, attribution required? (yes/no + exact credit string), monetization-safe? (must be yes)**.
 3. **Reject** anything CC-BY-NC, unknown-license, or from a re-upload channel. Prefer YouTube Audio Library (YouTube-certified, no Content-ID claims).
-4. Specify the **mix** per `references/audio-mastering.md`. **There is NO voiceover — the music bed is the LEAD, never ducked "under captions."** Bed at **~0.65–0.80**, accent SFX at 0.5–0.7 (above the bed), the reveal hit loudest at ~0.9–1.0. Name SFX punch-ins by frame (e.g. "whoosh on each beat cut", "low hit on the reveal at frame X"). Then state the **final-master target: -14 LUFS integrated / ≤ -1 dBTP / LRA 11**, applied via the two-pass `loudnorm` step in `audio-mastering.md` at render time. Per-element volumes are balance; the master sets loudness — both required.
+4. Specify the **mix** per `references/audio-mastering.md`. **The VO is the LEAD; the music bed DUCKS under it.** VO `vo.wav` at ~0.9–1.0; the bed base **~0.72** ducking to **~0.22 under speech** via the `vo-timing.json` `envelope` (swelling back on the payoff), accent SFX at 0.5–0.7 (above the ducked bed), the reveal hit loudest at ~0.9–1.0. Name SFX punch-ins by frame (e.g. "whoosh on each beat cut", "low hit on the reveal at frame X"). Then state the **final-master target: -14 LUFS integrated / ≤ -1 dBTP / LRA 11**, applied via the two-pass `loudnorm` step in `audio-mastering.md` at render time. Per-element volumes are balance; the master sets loudness — both required.
 5. Note: files are downloaded from the original source at render time — this spec just pins the choice + license receipt.
 
 ## Templates
@@ -37,14 +39,19 @@ Follow `references/audio-sources.md` for the source policy and `references/audio
 ```markdown
 # F-NNN — Visual Assets (spec)
 ## Fonts
-- Display: <Family> <weights> — `@remotion/google-fonts/<Pkg>` — free, self-hostable
-- Numeric/mono (if used): <Family> — <pkg>
+- Display (high-impact, hero): <Family> <weights> — `@remotion/google-fonts/<Pkg>` — why it fits: <one line>
+- Numeric/mono (if used): <Family> — <pkg> — tighten tracking on large numbers
 ## Palette (hex)
-- Background <#> · Text <#> · Accent <#> · Reveal <#> — caption contrast ratio: <X:1>
+- Background <#> + depth: <gradient #→# | grain | nebula> (NOT flat single-hex)
+- Text <#> · Accent <#> · Reveal <#> — caption contrast ratio: <X:1>
+- Pops on a phone at arm's length? <yes — why>
 ## Motion signature
 - <behavior>: <type>, <frames>f, <easing/spring>, scale <a→b>
+- Count-up (if used): 24–36f, ease-OUT, then hold
+## Visual richness (earn the frame — at least one)
+- Depth bg: <gradient/grain/nebula> · Large motif(s): <e.g. 500px moon disc / pyramid silhouette> · Hero type ≥ ~280px
 ## Icons / background
-- <none> | <name> — <source URL> — <license> — screened: no logos/faces
+- <none> | <name> — <source URL> — <license> — rendered LARGE (≥200px) — screened: no logos/faces
 ```
 
 ### `04-audio.md`
@@ -52,7 +59,7 @@ Follow `references/audio-sources.md` for the source policy and `references/audio
 # F-NNN — Audio (spec, monetization-safe)
 ## Music bed
 - Title / Artist · Source: <library> · URL: <…> · License: <…> · Attribution: <no | "credit string"> · Monetization-safe: yes
-- Mix (no VO — bed is the lead): bed at 0.65–0.80; swell ~+3 dB into the reveal; fade in <f>f / out <f>f
+- Mix (VO is the lead — bed ducks): VO `vo.wav` at 0.9–1.0; bed base ~0.72 → ~0.22 under speech via the `vo-timing.json` envelope; swell on the payoff; tail fades to 0
 ## SFX
 | Cue | At frame | Vol | Source | URL | License |
 |-----|----------|-----|--------|-----|---------|

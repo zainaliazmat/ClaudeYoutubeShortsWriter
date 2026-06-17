@@ -1,12 +1,16 @@
 ---
-name: scriptwriter-skill
-description: Use when creating episodic scripts, ensuring series continuity, adapting story concepts into visual narratives, or preparing scripts with sufficient beats for storyboarding
-version: 1.0.0
+name: scriptwriter-skill-narrative
+description: "NOT part of the /short facts pipeline — do NOT use for YouTube Shorts. Fictional narrative-SCREENPLAY tool only (three-act structure, characters, INT./EXT., dialogue) for multi-episode story scripts. For the Fathom Shorts pipeline use youtube-shorts-writer instead. Use this only when explicitly asked to write a fictional episodic screenplay/narrative."
+version: 1.0.1
 allowed-tools: Read, Write, Bash(ls:*)
 user-invocable: false
 ---
 
-# Scriptwriter Skill
+> ⚠️ **NOT the /short pipeline writer.** This is a fictional narrative-screenplay skill. The Fathom
+> Facts Shorts pipeline (step 3) uses **`youtube-shorts-writer`**, never this. Do not invoke this
+> inside a `/short` run.
+
+# Scriptwriter Skill (narrative screenplay — quarantined from /short)
 
 为 Scriptwriter 提供创作高质量、结构化剧本的专业知识，支持系列连续性和基于前作的续集创作。
 

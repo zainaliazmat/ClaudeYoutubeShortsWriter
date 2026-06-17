@@ -1,0 +1,13 @@
+# Local TTS virtualenv for the tts-voiceover engine (Kokoro + torch, multi-GB).
+# Created on the host where /short runs; never committed. See
+# .claude/skills/tts-voiceover/SKILL.md for how to recreate it.
+.venv-tts/
+__pycache__/
+*.pyc
+
+# Rendered/mastered video outputs — regenerable by scripts/render-run.mjs.
+# The spec package (00..08 .md, vo.wav, vo-timing.json, assets/) is the source of truth.
+output/**/final.mp4
+output/**/final-best.mp4
+output/**/out.mp4
+render/out/

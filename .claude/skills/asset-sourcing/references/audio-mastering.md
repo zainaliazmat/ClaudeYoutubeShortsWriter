@@ -4,7 +4,9 @@ Sourcing/licensing lives in `audio-sources.md`. **This file governs how loud the
 
 ## The one rule that prevents it
 
-**This channel has NO voiceover.** Kinetic typography = text + music + SFX only. So the **music bed is the LEAD element, not a background ducked under a voice.** The old "bed at ~0.10–0.15 under captions/dialogue" guidance is for narrated video and is WRONG here — it's what caused F-001. There is nothing to duck under. Mix the bed loud.
+**The VO is the LEAD; the music bed DUCKS under it.** These Shorts now carry a Kokoro voiceover (step 3.5). The voice plays at full; the **music bed ducks beneath it** (≈0.72 → ≈0.22 under speech) via the deterministic `vo-timing.json` `envelope`, then swells on the payoff. The bed is never the thing that's loud during speech — but it is never crushed to ~0.10 either; in the gaps and on the payoff it carries the energy. The thing that caused F-001 (-30.6 LUFS) was a flat ~0.11 bed with no master step — do not repeat that: master to -14 LUFS regardless.
+
+**No-VO special case:** if a Short has no voiceover, the music bed is itself the LEAD — mix it loud (0.65–0.80), nothing to duck under. (Channel default is VO.)
 
 ## Final-master target (non-negotiable)
 
@@ -15,18 +17,19 @@ The **rendered file** must measure:
 
 Per-element `<Audio volume>` values set *balance*. The **master step sets loudness.** Both are required.
 
-## Pre-master balance in Remotion (no-VO)
+## Pre-master balance in Remotion (VO-lead)
 
 Relative levels so the render is already in a sane range (keeps the master's gain small, so peaks aren't hard-limited):
 
 | Element | `<Audio volume>` | Role |
 |---|---|---|
-| Music bed (lead) | **0.65–0.80** | the sustained main audio; rides up on the swell |
-| Bed swell into payoff | bed × ~1.4 (≈ +3 dB) over the beat before the reveal | underscores the build |
-| Accent SFX (ticks/whoosh) | 0.5–0.7 | sit *above* the bed, not buried |
-| Reveal hit (payoff) | **0.9–1.0** | loudest element; peak near -1 dBFS in the render |
+| **Voiceover `vo.wav` (lead)** | **0.9–1.0** | the spine; always intelligible |
+| Music bed (ducked) | **base ~0.72 → ~0.22 under speech** via the `vo-timing.json` `envelope` frame-callback | supports the voice; un-ducks in gaps |
+| Bed swell into payoff | rises back toward base (and a touch above) after the final speech region | underscores the build |
+| Accent SFX (ticks/whoosh) | 0.5–0.7 | sit *above* the ducked bed |
+| Reveal hit (payoff) | **0.9–1.0** | loudest non-VO element; peak near -1 dBFS in the render |
 
-Fades stay as the spec dictates (e.g. bed fade-in 0→full over frames 0–30, fade-out over the loop-back). This is balance only — the absolute loudness is fixed by the master step below.
+The bed `volume` is a frame-callback reading the `envelope` keyframes (attack ~2f, release ~9f, regions merged under ~9f) — not a flat gain, not a live sidechain. The loop tail fades the bed to 0 (VO already ended). This is balance only — absolute loudness is fixed by the master step below.
 
 ## Master step (run at render time, after Remotion outputs `out.mp4`)
 

@@ -28,28 +28,40 @@ the counting. **You never compute frame budgets by hand.**
 ## Workflow (follow in order — don't skip the validator)
 
 ### 1. Parse the brief into structured sections
-Read the script. Identify: Overview/metadata, Hook, Beats[], Loop-Back, Captions, Audio, and
-any channel/platform notes. If the script is prose rather than a structured template, infer
-these sections and note that the structure was loose (it's harder to implement).
+Read the script (`02-script.md`). **Also read the composition spec (`05-remotion-prompt.md`) and
+asset spec (`03-assets.md`) when they exist** — the per-beat font sizes, hex, y-positions, z-order
+and timeline geometry that Category 9 grades live there, not in the script. Identify:
+Overview/metadata, Hook, Beats[], Loop-Back, Captions, Audio, and any channel/platform notes. If
+the script is prose rather than a structured template, infer these sections and note that the
+structure was loose (it's harder to implement). If `05` is not yet generated, score categories 1–8
+on the script and mark Category 9 as pending the composition spec.
 
 ### 2. Run the frame-budget validator — never do this math by hand
 ```bash
 python3 ${CLAUDE_SKILL_DIR}/scripts/validate_frame_budget.py <path-to-script> 2>&1
 ```
 (If the script is pasted inline rather than a file, write it to a temp file first, then run
-the validator on it.) The script parses the declared total, every `frames A–B` range, and the
-loop-back, then reports gaps/overlaps/total-mismatch with specific, quotable errors. **Quote
-its output** in the report — that's the evidence for the Timing category. Any BLOCKING ERROR
-is a `blocker` and caps the score (see the rubric).
+the validator on it.) **VO-driven runs:** when a `vo-timing.json` sits beside the script (the
+channel default), the validator reads `total` (= durationInFrames) from it and tiles the
+frame-map **table** the tts-voiceover step patched between the `<!-- FRAME-MAP -->` markers.
+With no VO it falls back to the declared total + `frames A–B` heading ranges (the no-VO path).
+Either way it reports gaps/overlaps/total-mismatch with specific, quotable errors. **Quote its
+output** in the report — that's the evidence for the Timing category. (Run it on the script IN
+the run folder so it can find `vo-timing.json`; a temp-file copy loses that sibling.) Any
+BLOCKING ERROR is a `blocker` and caps the score (see the rubric).
 
 **Note on exit codes:** the validator exits non-zero (1) when it finds blocking errors. That
 is the *intended* signal that the budget failed — it is **not** a tool failure. The full
 report is on stdout; read it and proceed to score. Don't re-run or treat exit 1 as broken.
 
-### 3. Score the 8 categories
+### 3. Score the 9 categories
 Load `references/scoring-rubric.md`. Score each weighted category, apply the blocker gate
 (≥1 blocker → final score capped at 60), and keep the breakdown auditable. Use
 `references/spec-checklist.md` for the per-scene fields a complete spec must contain.
+**Category 9 (Visual Design Quality & Frame Utilization) is graded against `05`/`03`** — flag
+dead space (>40% of safe-area height empty in a beat), timid hero scale, invisible
+hairline/near-black decorative layers, an unreadable core mechanic, and scale-dishonest data viz.
+Per the rubric, **do not award a 90+ verdict if Category 9 is below ~70% of its weight**.
 
 ### 4. Map creative prose to Remotion APIs, scene by scene
 Load `references/remotion-knowledge.md`. For each scene, translate vague motion language into
@@ -86,7 +98,7 @@ explicitly asks. After the report, you may *offer* to apply the fixes; wait for 
 
 ## What's bundled
 - `scripts/validate_frame_budget.py` — deterministic frame-math/tiling/loop validator (step 2)
-- `references/scoring-rubric.md` — 8 categories, weights, severity defs, the blocker gate
+- `references/scoring-rubric.md` — 9 categories (incl. Visual Design Quality), weights, severity defs, the blocker gate
 - `references/spec-checklist.md` — per-scene required fields + common ambiguities
 - `references/remotion-knowledge.md` — API configs, gotchas, the prose→config translation table
 - `references/platform-safe-zones.md` — 1080×1920 margins per platform
