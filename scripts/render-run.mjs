@@ -17,12 +17,39 @@ import { promisify } from "node:util";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { publicDirForRun, publicRunsRoot, staleRunDirs } from "./render-paths.mjs";
+import { assertSchemaVersion } from "./schema.mjs";
 
 const execFileP = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Startup sweep: remove per-run public dirs orphaned by an uncatchable exit
+// (SIGKILL / crash) where the render-time `finally` never ran. Pure keep/delete
+// decision lives in render-paths (staleRunDirs); this just performs the fs side.
+function sweepStalePublicRuns(renderRoot, activeId, log = () => {}) {
+  const root = publicRunsRoot(renderRoot);
+  if (!fs.existsSync(root)) return [];
+  let names;
+  try {
+    names = fs.readdirSync(root);
+  } catch {
+    return [];
+  }
+  const entries = names.map((name) => {
+    let mtimeMs = NaN;
+    try { mtimeMs = fs.statSync(path.join(root, name)).mtimeMs; } catch { /* treat as stale */ }
+    return { name, mtimeMs };
+  });
+  const now = Date.now();
+  const doomed = staleRunDirs(entries, { activeId, now });
+  for (const name of doomed) {
+    fs.rmSync(path.join(root, name), { recursive: true, force: true });
+    log(`swept stale public dir ${name}`);
+  }
+  return doomed;
+}
 export const ROOT = path.resolve(__dirname, "..");
 const RENDER = path.join(ROOT, "render");
-const RENDER_PUBLIC = path.join(RENDER, "public");
 
 export const ID_RE = /^F-\d{3}-[a-z0-9-]+$/;
 const BASENAME_RE = /^[a-zA-Z0-9._-]+$/;
@@ -68,11 +95,7 @@ function loadManifest(runDir, id) {
       { owner: "human" },
     );
   const m = JSON.parse(fs.readFileSync(mPath, "utf8"));
-  if (m.schemaVersion !== 1)
-    throw new GateError(
-      `assets.json schemaVersion ${m.schemaVersion} unsupported (this runner speaks v1).`,
-      { owner: "human" },
-    );
+  assertSchemaVersion(m, "assets.json", GateError, { owner: "human" });
   if (m.compositionId && m.compositionId !== id)
     throw new GateError(
       `assets.json compositionId "${m.compositionId}" != run folder "${id}".`,
@@ -115,9 +138,10 @@ function assetGate(runDir, manifest) {
   }
 }
 
-function seedPublic(runArg) {
-  // Reuse the single copy+clean source of truth.
-  return execFileP("bash", [path.join(__dirname, "seed-public.sh"), runArg], {
+function seedPublic(runArg, publicDir) {
+  // Reuse the single copy+clean source of truth, targeting this run's isolated
+  // public dir (audit #7 — concurrent runs must not clobber a shared render/public).
+  return execFileP("bash", [path.join(__dirname, "seed-public.sh"), runArg, publicDir], {
     cwd: ROOT,
   });
 }
@@ -156,19 +180,33 @@ export async function renderRun(runArg, opts = {}) {
   assetGate(runDir, manifest);
   log("asset gate: all present");
 
-  log("seeding render/public (copy + clean)");
-  await seedPublic(path.relative(ROOT, runDir));
+  // Sweep public dirs orphaned by a prior crash/SIGKILL (where finally never ran).
+  // Skips the active id and any dir recent enough to be a concurrent render.
+  sweepStalePublicRuns(RENDER, id, log);
 
+  // Isolated, per-run public dir so concurrent renders never share mutable state.
+  const publicDir = publicDirForRun(RENDER, id);
   const outDir = path.join(RENDER, "out");
   fs.mkdirSync(outDir, { recursive: true });
   const rawOut = path.join(outDir, `${id}.mp4`);
 
-  log(`remotion render (hard timeout ${timeoutMs / 1000}s)`);
-  await execFileP(
-    "npx",
-    ["remotion", "render", id, rawOut],
-    { cwd: RENDER, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024, killSignal: "SIGKILL" },
-  );
+  try {
+    // Seed INSIDE the try so a partial seed is cleaned up too — anything that throws
+    // after the dir exists must not leak it.
+    log(`seeding ${path.relative(ROOT, publicDir)} (copy + clean, run-scoped)`);
+    await seedPublic(path.relative(ROOT, runDir), publicDir);
+
+    log(`remotion render (hard timeout ${timeoutMs / 1000}s)`);
+    await execFileP(
+      "npx",
+      ["remotion", "render", id, rawOut, "--public-dir", publicDir],
+      { cwd: RENDER, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024, killSignal: "SIGKILL" },
+    );
+  } finally {
+    // Run-scoped staging is disposable; drop it so .public-runs/ doesn't accumulate
+    // (keep it when --keep-out, for render debugging).
+    if (!opts.keepOut) fs.rmSync(publicDir, { recursive: true, force: true });
+  }
   if (!fs.existsSync(rawOut))
     throw new GateError("remotion render produced no output file", { owner: "video" });
   log(`rendered: ${path.relative(ROOT, rawOut)}`);
