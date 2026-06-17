@@ -73,6 +73,8 @@ def synth_and_durations(spoken_text, voice, speed, out_wav):
     raw = out_wav + ".raw.wav"
     sf.write(raw, np.concatenate(chunks), sr)
     lead = _trim_silence(raw, out_wav)
+    if os.path.exists(raw):
+        os.remove(raw)
     return [(s - lead, e - lead) for (s, e) in words]
 
 
@@ -87,8 +89,12 @@ def _trim_silence(in_wav, out_wav):
     lead = 0.0
     for line in probe.stderr.decode("utf-8", "ignore").splitlines():
         if "silence_end" in line:
-            lead = float(line.split("silence_end:")[1].split("|")[0].strip())
-            break
+            try:
+                lead = float(line.split("silence_end:")[1].split("|")[0].strip())
+                break
+            except (ValueError, IndexError):
+                lead = 0.0
+                continue
     subprocess.run(
         ["ffmpeg", "-y", "-i", in_wav, "-af",
          "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-50dB:"
