@@ -1,0 +1,38 @@
+{
+  "name": "fathom-render",
+  "version": "1.0.0",
+  "description": "Fathom Shorts Remotion renderer (shared lib + per-video scene codegen)",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.478",
+    "@remotion/google-fonts": "4.0.478",
+    "@remotion/media": "4.0.478",
+    "@remotion/tailwind-v4": "4.0.478",
+    "lucide-react": "^1.20.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.478",
+    "tailwindcss": "4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.478",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "test:lib": "node --experimental-strip-types --test src/lib/__tests__/*.test.ts",
+    "gate": "tsc && eslint src"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

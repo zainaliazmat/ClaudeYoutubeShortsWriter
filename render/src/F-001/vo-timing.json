@@ -1,0 +1,785 @@
+{
+  "fps": 30,
+  "voice": "am_michael",
+  "speed": 1.08,
+  "total": 930,
+  "words": [
+    {
+      "i": 0,
+      "display": "Cleopatra",
+      "spoken": "Cleopatra",
+      "start": 0,
+      "end": 19,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 1,
+      "display": "lived",
+      "spoken": "lived",
+      "start": 19,
+      "end": 27,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 2,
+      "display": "closer",
+      "spoken": "closer",
+      "start": 27,
+      "end": 40,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 3,
+      "display": "in",
+      "spoken": "in",
+      "start": 40,
+      "end": 43,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 4,
+      "display": "time",
+      "spoken": "time",
+      "start": 43,
+      "end": 53,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 5,
+      "display": "to",
+      "spoken": "to",
+      "start": 53,
+      "end": 57,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 6,
+      "display": "you",
+      "spoken": "you",
+      "start": 57,
+      "end": 64,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 7,
+      "display": "than",
+      "spoken": "than",
+      "start": 64,
+      "end": 67,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 8,
+      "display": "to",
+      "spoken": "to",
+      "start": 67,
+      "end": 70,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 9,
+      "display": "the",
+      "spoken": "the",
+      "start": 70,
+      "end": 73,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 10,
+      "display": "Great",
+      "spoken": "Great",
+      "start": 73,
+      "end": 81,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 11,
+      "display": "Pyramids",
+      "spoken": "Pyramids",
+      "start": 81,
+      "end": 109,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 12,
+      "display": "The",
+      "spoken": "The",
+      "start": 112,
+      "end": 115,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 13,
+      "display": "Great",
+      "spoken": "Great",
+      "start": 115,
+      "end": 124,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 14,
+      "display": "Pyramid",
+      "spoken": "Pyramid",
+      "start": 124,
+      "end": 137,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 15,
+      "display": "was",
+      "spoken": "was",
+      "start": 137,
+      "end": 142,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 16,
+      "display": "finished",
+      "spoken": "finished",
+      "start": 142,
+      "end": 152,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 17,
+      "display": "around",
+      "spoken": "around",
+      "start": 152,
+      "end": 162,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 18,
+      "display": "2560",
+      "spoken": "twenty-five",
+      "start": 162,
+      "end": 180,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 19,
+      "display": "2560",
+      "spoken": "sixty",
+      "start": 180,
+      "end": 191,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 20,
+      "display": "BC",
+      "spoken": "B",
+      "start": 191,
+      "end": 199,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 21,
+      "display": "BC",
+      "spoken": "C",
+      "start": 199,
+      "end": 214,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 22,
+      "display": "for",
+      "spoken": "for",
+      "start": 217,
+      "end": 221,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 23,
+      "display": "the",
+      "spoken": "the",
+      "start": 221,
+      "end": 224,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 24,
+      "display": "pharaoh",
+      "spoken": "pharaoh",
+      "start": 224,
+      "end": 237,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 25,
+      "display": "Khufu",
+      "spoken": "Khufu",
+      "start": 237,
+      "end": 259,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 26,
+      "display": "Cleopatra",
+      "spoken": "Cleopatra",
+      "start": 266,
+      "end": 292,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 27,
+      "display": "Egypt's",
+      "spoken": "Egypt's",
+      "start": 296,
+      "end": 307,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 28,
+      "display": "last",
+      "spoken": "last",
+      "start": 307,
+      "end": 316,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 29,
+      "display": "queen",
+      "spoken": "queen",
+      "start": 316,
+      "end": 334,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 30,
+      "display": "was",
+      "spoken": "was",
+      "start": 336,
+      "end": 342,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 31,
+      "display": "born",
+      "spoken": "born",
+      "start": 342,
+      "end": 350,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 32,
+      "display": "in",
+      "spoken": "in",
+      "start": 350,
+      "end": 355,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 33,
+      "display": "69",
+      "spoken": "sixty-nine",
+      "start": 355,
+      "end": 375,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 34,
+      "display": "BC",
+      "spoken": "B",
+      "start": 375,
+      "end": 382,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 35,
+      "display": "BC",
+      "spoken": "C",
+      "start": 382,
+      "end": 397,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 36,
+      "display": "That's",
+      "spoken": "That's",
+      "start": 397,
+      "end": 402,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 37,
+      "display": "about",
+      "spoken": "about",
+      "start": 402,
+      "end": 411,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 38,
+      "display": "2,500",
+      "spoken": "two",
+      "start": 411,
+      "end": 418,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 39,
+      "display": "2,500",
+      "spoken": "thousand",
+      "start": 418,
+      "end": 428,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 40,
+      "display": "2,500",
+      "spoken": "five",
+      "start": 428,
+      "end": 436,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 41,
+      "display": "2,500",
+      "spoken": "hundred",
+      "start": 436,
+      "end": 446,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 42,
+      "display": "years",
+      "spoken": "years",
+      "start": 446,
+      "end": 457,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 43,
+      "display": "after",
+      "spoken": "after",
+      "start": 457,
+      "end": 465,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 44,
+      "display": "the",
+      "spoken": "the",
+      "start": 465,
+      "end": 467,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 45,
+      "display": "pyramid",
+      "spoken": "pyramid",
+      "start": 467,
+      "end": 493,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 46,
+      "display": "The",
+      "spoken": "The",
+      "start": 498,
+      "end": 501,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 47,
+      "display": "first",
+      "spoken": "first",
+      "start": 501,
+      "end": 511,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 48,
+      "display": "Moon",
+      "spoken": "Moon",
+      "start": 511,
+      "end": 520,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 49,
+      "display": "landing",
+      "spoken": "landing",
+      "start": 520,
+      "end": 534,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 50,
+      "display": "was",
+      "spoken": "was",
+      "start": 534,
+      "end": 540,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 51,
+      "display": "in",
+      "spoken": "in",
+      "start": 540,
+      "end": 544,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 52,
+      "display": "1969",
+      "spoken": "nineteen",
+      "start": 544,
+      "end": 559,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 53,
+      "display": "1969",
+      "spoken": "sixty-nine",
+      "start": 559,
+      "end": 592,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 54,
+      "display": "Cleopatra",
+      "spoken": "Cleopatra",
+      "start": 596,
+      "end": 616,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 55,
+      "display": "was",
+      "spoken": "was",
+      "start": 616,
+      "end": 621,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 56,
+      "display": "born",
+      "spoken": "born",
+      "start": 621,
+      "end": 631,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 57,
+      "display": "only",
+      "spoken": "only",
+      "start": 631,
+      "end": 642,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 58,
+      "display": "2,000",
+      "spoken": "two",
+      "start": 642,
+      "end": 649,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 59,
+      "display": "2,000",
+      "spoken": "thousand",
+      "start": 649,
+      "end": 662,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 60,
+      "display": "years",
+      "spoken": "years",
+      "start": 662,
+      "end": 673,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 61,
+      "display": "before",
+      "spoken": "before",
+      "start": 673,
+      "end": 684,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 62,
+      "display": "that",
+      "spoken": "that",
+      "start": 684,
+      "end": 702,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 63,
+      "display": "So",
+      "spoken": "So",
+      "start": 705,
+      "end": 711,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 64,
+      "display": "she's",
+      "spoken": "she's",
+      "start": 711,
+      "end": 717,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 65,
+      "display": "roughly",
+      "spoken": "roughly",
+      "start": 717,
+      "end": 728,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 66,
+      "display": "450",
+      "spoken": "four",
+      "start": 728,
+      "end": 737,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 67,
+      "display": "450",
+      "spoken": "hundred",
+      "start": 737,
+      "end": 748,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 68,
+      "display": "450",
+      "spoken": "fifty",
+      "start": 748,
+      "end": 758,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 69,
+      "display": "years",
+      "spoken": "years",
+      "start": 758,
+      "end": 768,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 70,
+      "display": "closer",
+      "spoken": "closer",
+      "start": 768,
+      "end": 782,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 71,
+      "display": "to",
+      "spoken": "to",
+      "start": 782,
+      "end": 785,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 72,
+      "display": "the",
+      "spoken": "the",
+      "start": 785,
+      "end": 789,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 73,
+      "display": "Moon",
+      "spoken": "Moon",
+      "start": 789,
+      "end": 800,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 74,
+      "display": "landing",
+      "spoken": "landing",
+      "start": 800,
+      "end": 815,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 75,
+      "display": "than",
+      "spoken": "than",
+      "start": 815,
+      "end": 819,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 76,
+      "display": "to",
+      "spoken": "to",
+      "start": 819,
+      "end": 823,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 77,
+      "display": "the",
+      "spoken": "the",
+      "start": 823,
+      "end": 827,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 78,
+      "display": "pyramids",
+      "spoken": "pyramids",
+      "start": 827,
+      "end": 855,
+      "beat": "beat6",
+      "region": 0
+    }
+  ],
+  "beats": [
+    {
+      "id": "hook",
+      "start": 0,
+      "end": 109
+    },
+    {
+      "id": "beat1",
+      "start": 109,
+      "end": 259
+    },
+    {
+      "id": "beat2",
+      "start": 259,
+      "end": 397
+    },
+    {
+      "id": "beat3",
+      "start": 397,
+      "end": 493
+    },
+    {
+      "id": "beat4",
+      "start": 493,
+      "end": 592
+    },
+    {
+      "id": "beat5",
+      "start": 592,
+      "end": 702
+    },
+    {
+      "id": "beat6",
+      "start": 702,
+      "end": 855
+    },
+    {
+      "id": "loop",
+      "start": 855,
+      "end": 930
+    }
+  ],
+  "speech_regions": [
+    {
+      "start": 0,
+      "end": 855
+    }
+  ],
+  "envelope": [
+    {
+      "frame": 0,
+      "vol": 0.22
+    },
+    {
+      "frame": 855,
+      "vol": 0.22
+    },
+    {
+      "frame": 864,
+      "vol": 0.72
+    },
+    {
+      "frame": 930,
+      "vol": 0.72
+    }
+  ]
+}

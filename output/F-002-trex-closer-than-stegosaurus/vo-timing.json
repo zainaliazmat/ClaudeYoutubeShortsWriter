@@ -1,0 +1,560 @@
+{
+  "fps": 30,
+  "voice": "am_michael",
+  "speed": 1.08,
+  "total": 720,
+  "words": [
+    {
+      "i": 0,
+      "display": "T",
+      "spoken": "T",
+      "start": 0,
+      "end": 6,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 1,
+      "display": "rex",
+      "spoken": "rex",
+      "start": 6,
+      "end": 16,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 2,
+      "display": "lived",
+      "spoken": "lived",
+      "start": 16,
+      "end": 25,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 3,
+      "display": "closer",
+      "spoken": "closer",
+      "start": 25,
+      "end": 39,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 4,
+      "display": "to",
+      "spoken": "to",
+      "start": 39,
+      "end": 43,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 5,
+      "display": "you",
+      "spoken": "you",
+      "start": 43,
+      "end": 50,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 6,
+      "display": "than",
+      "spoken": "than",
+      "start": 50,
+      "end": 55,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 7,
+      "display": "to",
+      "spoken": "to",
+      "start": 55,
+      "end": 59,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 8,
+      "display": "Stegosaurus",
+      "spoken": "Stegosaurus",
+      "start": 59,
+      "end": 95,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 9,
+      "display": "Stegosaurus",
+      "spoken": "Stegosaurus",
+      "start": 99,
+      "end": 124,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 10,
+      "display": "roamed",
+      "spoken": "roamed",
+      "start": 124,
+      "end": 135,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 11,
+      "display": "about",
+      "spoken": "about",
+      "start": 135,
+      "end": 143,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 12,
+      "display": "150",
+      "spoken": "one",
+      "start": 143,
+      "end": 147,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 13,
+      "display": "150",
+      "spoken": "hundred",
+      "start": 147,
+      "end": 158,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 14,
+      "display": "150",
+      "spoken": "fifty",
+      "start": 158,
+      "end": 168,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 15,
+      "display": "million",
+      "spoken": "million",
+      "start": 168,
+      "end": 180,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 16,
+      "display": "years",
+      "spoken": "years",
+      "start": 180,
+      "end": 189,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 17,
+      "display": "ago",
+      "spoken": "ago",
+      "start": 189,
+      "end": 206,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 18,
+      "display": "T",
+      "spoken": "T",
+      "start": 210,
+      "end": 219,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 19,
+      "display": "rex",
+      "spoken": "rex",
+      "start": 219,
+      "end": 229,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 20,
+      "display": "came",
+      "spoken": "came",
+      "start": 229,
+      "end": 236,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 21,
+      "display": "around",
+      "spoken": "around",
+      "start": 236,
+      "end": 248,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 22,
+      "display": "66",
+      "spoken": "sixty-six",
+      "start": 248,
+      "end": 268,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 23,
+      "display": "million",
+      "spoken": "million",
+      "start": 268,
+      "end": 280,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 24,
+      "display": "years",
+      "spoken": "years",
+      "start": 280,
+      "end": 289,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 25,
+      "display": "ago",
+      "spoken": "ago",
+      "start": 289,
+      "end": 306,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 26,
+      "display": "That's",
+      "spoken": "That's",
+      "start": 309,
+      "end": 319,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 27,
+      "display": "roughly",
+      "spoken": "roughly",
+      "start": 319,
+      "end": 333,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 28,
+      "display": "84",
+      "spoken": "eighty-four",
+      "start": 333,
+      "end": 351,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 29,
+      "display": "million",
+      "spoken": "million",
+      "start": 351,
+      "end": 363,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 30,
+      "display": "years",
+      "spoken": "years",
+      "start": 363,
+      "end": 372,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 31,
+      "display": "apart",
+      "spoken": "apart",
+      "start": 372,
+      "end": 395,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 32,
+      "display": "But",
+      "spoken": "But",
+      "start": 398,
+      "end": 402,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 33,
+      "display": "from",
+      "spoken": "from",
+      "start": 402,
+      "end": 408,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 34,
+      "display": "T",
+      "spoken": "T",
+      "start": 408,
+      "end": 417,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 35,
+      "display": "rex",
+      "spoken": "rex",
+      "start": 417,
+      "end": 425,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 36,
+      "display": "to",
+      "spoken": "to",
+      "start": 425,
+      "end": 429,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 37,
+      "display": "today",
+      "spoken": "today",
+      "start": 429,
+      "end": 447,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 38,
+      "display": "Only",
+      "spoken": "Only",
+      "start": 452,
+      "end": 464,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 39,
+      "display": "66",
+      "spoken": "sixty-six",
+      "start": 464,
+      "end": 484,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 40,
+      "display": "million",
+      "spoken": "million",
+      "start": 484,
+      "end": 497,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 41,
+      "display": "years",
+      "spoken": "years",
+      "start": 497,
+      "end": 518,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 42,
+      "display": "So",
+      "spoken": "So",
+      "start": 522,
+      "end": 527,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 43,
+      "display": "the",
+      "spoken": "the",
+      "start": 527,
+      "end": 531,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 44,
+      "display": "king",
+      "spoken": "king",
+      "start": 531,
+      "end": 539,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 45,
+      "display": "of",
+      "spoken": "of",
+      "start": 539,
+      "end": 543,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 46,
+      "display": "dinosaurs",
+      "spoken": "dinosaurs",
+      "start": 543,
+      "end": 567,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 47,
+      "display": "is",
+      "spoken": "is",
+      "start": 567,
+      "end": 572,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 48,
+      "display": "closer",
+      "spoken": "closer",
+      "start": 572,
+      "end": 586,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 49,
+      "display": "to",
+      "spoken": "to",
+      "start": 586,
+      "end": 591,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 50,
+      "display": "you",
+      "spoken": "you",
+      "start": 591,
+      "end": 599,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 51,
+      "display": "than",
+      "spoken": "than",
+      "start": 599,
+      "end": 605,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 52,
+      "display": "to",
+      "spoken": "to",
+      "start": 605,
+      "end": 608,
+      "beat": "beat6",
+      "region": 0
+    },
+    {
+      "i": 53,
+      "display": "Stegosaurus",
+      "spoken": "Stegosaurus",
+      "start": 608,
+      "end": 645,
+      "beat": "beat6",
+      "region": 0
+    }
+  ],
+  "beats": [
+    {
+      "id": "hook",
+      "start": 0,
+      "end": 95
+    },
+    {
+      "id": "beat1",
+      "start": 95,
+      "end": 206
+    },
+    {
+      "id": "beat2",
+      "start": 206,
+      "end": 306
+    },
+    {
+      "id": "beat3",
+      "start": 306,
+      "end": 395
+    },
+    {
+      "id": "beat4",
+      "start": 395,
+      "end": 447
+    },
+    {
+      "id": "beat5",
+      "start": 447,
+      "end": 518
+    },
+    {
+      "id": "beat6",
+      "start": 518,
+      "end": 645
+    },
+    {
+      "id": "loop",
+      "start": 645,
+      "end": 720
+    }
+  ],
+  "speech_regions": [
+    {
+      "start": 0,
+      "end": 645
+    }
+  ],
+  "envelope": [
+    {
+      "frame": 0,
+      "vol": 0.22
+    },
+    {
+      "frame": 645,
+      "vol": 0.22
+    },
+    {
+      "frame": 654,
+      "vol": 0.72
+    },
+    {
+      "frame": 720,
+      "vol": 0.72
+    }
+  ]
+}

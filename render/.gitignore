@@ -1,0 +1,15 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Render outputs (the runner masters to output/F-NNN/final.mp4, not here)
+out
+out.mp4
+final.mp4
+
+# Run-scoped public assets — populated fresh each render by scripts/render-run.sh
+# (copy + clean from output/F-NNN/). Never committed: deterministic, no staleness.
+# The canonical copies live under output/F-NNN/ (vo.wav) and output/F-NNN/assets/.
+public/*
+!public/.gitkeep

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "compositionId": "F-002-trex-closer-than-stegosaurus",
+  "vo": "vo.wav",
+  "assets": [
+    { "file": "music-dark-tension.mp3", "kind": "music", "title": "Dark Tension Cinematic Background", "url": "https://pixabay.com/music/suspense-dark-tension-ambience-thriller-atmosphere-cinematic-background-174648/", "license": "Pixabay Content License (commercial use OK, no attribution)" },
+    { "file": "sfx-tick.mp3", "kind": "sfx", "title": "Clock/lock tick", "url": "https://pixabay.com/sound-effects/search/clock-tick/", "license": "Pixabay Content License (commercial use OK, no attribution)" },
+    { "file": "sfx-whoosh.mp3", "kind": "sfx", "title": "Short air whoosh", "url": "https://pixabay.com/sound-effects/search/whoosh/", "license": "Pixabay Content License (commercial use OK, no attribution)" },
+    { "file": "sfx-reveal-hit.mp3", "kind": "sfx", "title": "Low cinematic reveal hit", "url": "https://pixabay.com/sound-effects/search/cinematic-hit/", "license": "Pixabay Content License (commercial use OK, no attribution)" }
+  ]
+}
