@@ -33,7 +33,7 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 | Generation location | **Inside the `/short` run** | Pipeline now produces `vo.wav`; needs Piper + aligner on the host |
 | Voice | **Pick from 2–3 Piper samples at build time** | Candidates: `en_US-ryan-high`, `en_GB-alan-medium`, `en_US-amy-medium`; swappable later |
 | Music bed | **Ducks under VO** (~0.72 → ~0.22 during speech) | VO is now the lead, reversing the old no-VO rule |
-| Captions | **Word-by-word synced to VO** via forced alignment | `whisper.cpp` on `vo.wav` → word timestamps |
+| Captions | **Word-by-word synced to VO** via exact alignment | **Piper-native phoneme durations** (primary, exact-by-construction); `aeneas` forced-alignment fallback; whisper NOT used for timing (§3.3) |
 | AI disclosure | **YES** (altered/synthetic content) | Synthetic voice is no longer script-only-AI exempt |
 | Content | **Denser visuals, ~same length (~30s)** | Narration sized to ~28–32s; add date ticks/era labels/stronger comparison |
 
@@ -56,12 +56,19 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
   captions are generated from `vo-timing.json` word timestamps (not hand-typed windows).
 - **`remotion-script-reviewer`** (rubric + validator) — Audio category reworded: **VO is the lead,
   music ducks under it** (the old "bed is the lead, never ducked" becomes the no-VO special case).
-  Validator still checks the (now VO-derived) frame map tiles [0, total] exactly.
+  Validator still checks the VO-derived map tiles `[0, total]` — unchanged, because the loop-back tail
+  is a real map entry and `total` is defined in `vo-timing.json` (§3.5), so there's no gap to special-case.
 - **`asset-sourcing`** — visual-richness guidance gains the F-001 polish: timeline date ticks/era
   labels, a stronger side-by-side comparison beat, brighter rest-state motif fills.
-- **`short-assembly`** — render checklist includes `vo.wav`; **AI-disclosure flips to YES**.
+- **`short-assembly`** — render checklist includes `vo.wav`; **AI-disclosure flips to YES**. The
+  completeness gate adds a "README disclosure = YES" item — but note this is a **reminder, not
+  enforcement**: it verifies the README states YES; it cannot flip the toggle on the YouTube upload
+  form (outside the pipeline). Necessary, not sufficient.
 - **`render-qa`** — new check **f. Voiceover**: VO track present & audible; music ducked under it
-  (VO segments louder than bed); captions align to word onsets within ~±3 frames (spot-check).
+  (bed measurably quieter inside `speech_regions` than between them); captions align to the
+  `vo-timing.json` integer frames within ±3 frames on a spot-check. (Because both captions and the
+  envelope derive from the same integer frames in §3.5, this is a regression cross-check, not the
+  primary timing source.)
 - **`CLAUDE.md`** — remove "does NOT … use TTS"; rewrite the Audio standard (VO lead / ducked bed);
   AI-disclosure standard → disclose synthetic voice; reorder the pipeline steps for VO-driven timing.
 
@@ -74,6 +81,8 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 3  writer            → 02-script.md  (NOW includes a Narration script + on-screen text + visual dir;
                                        frame map left as a TARGET, finalized in 3.5)
 3.5 tts-voiceover    → vo.wav + vo-timing.json; writes the FINAL frame map into 02-script.md
+       (OVERRUN EDGE: if measured VO > target+~15% and length_scale can't close it without
+        sounding robotic, LOOP BACK to step 3 to cut words — a real cycle, not a linear hop.)
 4  asset-sourcing    → 03-assets.md (denser visuals) + 04-audio.md (music DUCKED under VO + SFX)
 5  prompt-generator  → 05-remotion-prompt.md (vo.wav lead + ducked music + SFX; captions from timing)
 6  review loop       → 06-scorecard.md (validator on the VO-derived map; 9-cat rubric)
@@ -81,41 +90,122 @@ music tastefully under the voice, render-qa PASS, and the pipeline docs/skills u
 8  render-qa (post-render) → 08-render-qa.md (adds the VO check)
 ```
 
+> **`length_scale` direction (corrected):** Piper `length_scale > 1.0` = *slower/longer*; `< 1.0` =
+> *faster/shorter*. So an OVERRUN is closed by *lowering* length_scale toward ~0.95 or cutting words;
+> an UNDERRUN by raising it. Past ~0.9 it gets robotic → persistent overrun must cut words (3.5→3).
+
 ### 3.3 Data flow for VO-driven timing (the core mechanism)
 
-1. Writer writes narration lines L1..Ln grouped by beat, with a target seconds-per-beat.
-2. `tts-voiceover` synthesizes the full narration to `vo.wav` with Piper (voice + `--length-scale`
-   for rate).
-3. `whisper.cpp` transcribes `vo.wav` with word timestamps → align to the known narration text →
-   `vo-timing.json` = `[{word, start_s, end_s, beat}]`.
-4. Derive frames: `beat.start_frame = round(first_word.start_s × 30)`, `beat.end_frame =
-   round(last_word.end_s × 30)`; ensure contiguity (snap `next.start = prev.end`);
-   `durationInFrames = last beat end + loop-back tail`.
-   - **Hook/VO-start convention:** frame 0 stays the fully-lit thumbnail (no black lead). The VO's
-     first line IS the hook, so narration begins at frame 0 (or within a few frames). The **loop-back
-     tail is silent** (VO has ended, music fades to 0) so the auto-loop restart is clean — same as the
-     no-VO model.
-5. Write the finalized frame map table back into `02-script.md` (so the validator + prompt-generator
-   consume one source of truth).
-6. Captions in `05` are emitted directly from `vo-timing.json` word windows.
+1. **Writer** emits narration lines L1..Ln grouped by beat + a target seconds-per-beat. Numbers/abbrevs
+   are written in a **TTS-friendly spoken form** OR flagged so step 2 can normalize them (see §3.6).
+2. **Normalize (in `tts-voiceover`):** expand numbers/abbreviations to their spoken token form
+   (`450`→"four hundred fifty", `1969`→"nineteen sixty-nine", `BCE`→"B C E") and keep a map from each
+   spoken token back to its beat + on-screen display string. This normalized text is BOTH what Piper
+   speaks AND the alignment target — so token counts match by construction.
+3. **Synthesize:** Piper → raw WAV (voice + `length_scale`). **Trim leading/trailing silence**
+   (Piper emits ~80–200ms lead-in) to produce `vo.wav`, so `t=0` of `vo.wav` is the first phoneme and
+   audio agrees with the frame map from frame 0.
+4. **Align (exact-by-construction, not ASR):**
+   - **Primary — Piper-native durations:** Piper's duration predictor knows each phoneme's length
+     because it generated them; sum phoneme→word to get exact word `[start,end]`. No guessing.
+   - **Fallback — `aeneas` forced alignment** of the normalized text against `vo.wav` (DTW) if native
+     durations aren't exposed by the installed Piper build.
+   - **whisper.cpp is NOT used for timing** — only as an optional QA transcription to spot gross errors.
+5. **Round to integer frames ONCE, here:** convert every word `start/end` from seconds to an integer
+   frame (`round(s × fps)`) a single time, in `tts-voiceover`. **Store frames, not seconds,** in
+   `vo-timing.json`. Everything downstream (frame map, captions) reads these ints — no component
+   re-rounds from seconds, so seams can't disagree by a frame.
+6. **Derive the frame map** from the integer word frames: `beat.start = first word frame of the beat`,
+   `beat.end = next beat's start` (contiguity by construction, not by post-hoc snapping). The
+   **loop-back tail is itself a frame-map entry** (`[last_beat.end, total]`), so the map tiles
+   `[0, total]` honestly and `total = durationInFrames` (see §3.5 for the `total` definition the
+   validator uses).
+   - **Hook/VO-start convention:** after silence-trim, the first word sits at/near frame 0, so frame 0
+     is the fully-lit thumbnail with the hook line already speaking (no black lead). The **loop-back
+     tail is silent** (VO ended, music fades to 0) for a clean auto-loop restart.
+7. **Write** the finalized frame map table back into `02-script.md` (single source of truth for the
+   validator + prompt-generator).
+8. **Captions** in `05` are emitted from the **integer frames** in `vo-timing.json` (word→display
+   string via the §3.2 map), not re-derived from seconds.
 
 ### 3.4 Host dependencies (where `/short` runs — this machine)
 
-- `piper` (piper-tts) + at least the 2–3 candidate voice `.onnx` models.
-- `whisper.cpp` (or `@remotion/install-whisper-cpp`) + a small/medium English model for alignment.
-- `ffmpeg` (already present) for WAV→levels and the −14 LUFS master.
-- A `tts-voiceover` setup/preflight step checks these exist; if missing, the run **pauses with
-  install instructions** rather than failing silently.
+- `piper` (piper-tts) + the **configured** voice `.onnx` model(s) (plus the 2–3 candidates for the
+  one-time selection test).
+- **`aeneas`** (+ `espeak`/`ffmpeg`) for the forced-alignment **fallback** path only. Primary path uses
+  Piper's own phoneme durations and needs no aligner.
+- `whisper.cpp` is **optional** (QA-only sanity transcription), not required for timing.
+- `ffmpeg` (already present) for silence-trim, the ducking envelope render, and the −14 LUFS master.
+- The `tts-voiceover` **preflight** checks that Piper is installed AND **the voice named in config
+  exists**, and that the aligner is available *if* the native-duration path isn't. If anything is
+  missing it **pauses with install instructions** rather than failing silently.
+
+### 3.5 Timing contract — `vo-timing.json` schema (the cross-component interface)
+
+Three components depend on this file (`tts-voiceover` writes it; the validator + `prompt-generator`
+read it), so it is pinned concretely. **All times are integer FRAMES at the comp fps; no seconds
+appear in this file.**
+
+```json
+{
+  "fps": 30,
+  "voice": "en_US-ryan-high",
+  "length_scale": 1.0,
+  "total": 900,                      // = durationInFrames; the validator tiles [0, total]
+  "words": [
+    { "i": 0, "display": "Cleopatra", "spoken": "cleopatra",
+      "start": 0, "end": 9, "beat": "hook", "region": 0 }
+    // ... one entry per spoken word, monotonic non-overlapping frames
+  ],
+  "beats": [
+    { "id": "hook", "start": 0,   "end": 42 },
+    { "id": "beat1","start": 42,  "end": 150 },
+    // ... contiguous: each beat.start == previous beat.end
+    { "id": "loop", "start": 858, "end": 900 }   // loop-back tail IS an entry; tail words = []
+  ],
+  "speech_regions": [               // merged speech spans for the ducking envelope (see §4)
+    { "start": 0, "end": 132 }, { "start": 150, "end": 240 }
+  ]
+}
+```
+
+- `total` is the canonical `durationInFrames`. `beats[]` tiles `[0, total]` exactly **including** the
+  trailing `loop` entry, so the validator's existing "tiles [0, total]" invariant is satisfied with no
+  special-casing — the silent tail is a real entry whose `words` are empty.
+- `display` vs `spoken` resolves the normalization mismatch: captions render `display`; alignment used
+  `spoken`.
+
+### 3.6 Alignment failure detector (makes the §8 fallback first-class, not emergency-only)
+
+After producing word frames (primary or fallback), `tts-voiceover` runs these checks; **any failure
+trips the fallback aligner; a second failure aborts the run with a diagnostic** (never ships bad sync):
+
+1. **Monotonicity:** every `word.end ≥ word.start` and `word[i].start ≥ word[i-1].end`. Violation → fail.
+2. **Coverage:** `sum(word durations)` is within ±5% of the trimmed `vo.wav` length (frames). A large
+   gap means alignment dropped/merged words → fail.
+3. **Plausible word durations:** no word shorter than ~2 frames or longer than ~45 frames (≈0.07–1.5s)
+   unless it's a known long token; outliers flag the line for fallback.
+4. **Token-count match:** number of aligned words == number of normalized spoken tokens. Mismatch
+   (the numbers/abbrev hazard) → fail, re-normalize or fall back.
+
+This is the defined "how does a line fail?" detector the reviewer asked for — without it the fallback
+never triggers and bad timing ships silently.
 
 ---
 
 ## 4. Audio model (the rule reversal, stated precisely)
 
 - **VO = lead.** `vo.wav` plays at full (≈ 0.9–1.0 pre-master).
-- **Music bed ducks:** base ~0.72 between/under nothing, but **~0.20–0.25 under active speech**;
-  rises back up in gaps and swells on the payoff (after the last VO line). Implement as a
-  frame-keyed volume envelope derived from `vo-timing.json` speech regions (sidechain-style, but
-  precomputed, deterministic — no live sidechain).
+- **Music bed ducks:** base ~0.72, **~0.20–0.25 under active speech**, rising back in gaps and
+  swelling on the payoff (after the last VO line). Implemented as a deterministic frame-keyed volume
+  envelope (no live sidechain) built from `vo-timing.json` `speech_regions`. The envelope SHAPE is
+  specified, because that's what separates clean ducking from audible pumping:
+  - **Region-merge:** words separated by a gap **< ~300ms (~9 frames)** are merged into one speech
+    region, so the bed does NOT un-duck in the micro-gaps between words. (These merged regions are the
+    `speech_regions` stored in `vo-timing.json`.)
+  - **Attack ~60ms (~2 frames):** fast-but-smooth ramp 0.72→0.22 entering a region (no instantaneous step).
+  - **Release ~300ms (~9 frames):** slower ramp 0.22→0.72 leaving a region, so it breathes rather than chatters.
+  - Ramps are linear-in-dB; the payoff swell starts after the final region's release completes.
 - **SFX** unchanged (ticks/whoosh/reveal-hit at their visual events).
 - **Master** unchanged: two-pass `loudnorm` → −14 LUFS / ≤ −1 dBTP / LRA 11, verify.
 
@@ -155,11 +245,15 @@ From the v3 render-qa polish list, encode in `03`/`05`:
 
 | Risk | Mitigation |
 |---|---|
-| Whisper word-onsets drift vs Piper audio | Piper speech is clean → alignment is accurate; spot-check in render-qa (±3 frames); fall back to Piper sentence timing + even word distribution if a line fails |
-| Host missing piper/whisper | `tts-voiceover` preflight pauses with install steps |
-| VO runs longer than ~30s | Writer targets 28–32s; `tts-voiceover` reports overruns; tighten narration or raise `--length-scale` |
-| Frame map churn breaks fixed audio cues | VO-derived map is the single source of truth now; SFX cues recomputed from it, not hard-coded |
-| Disclosure missed | `short-assembly` completeness gate adds "disclosure=YES present" as a checklist item |
+| **Word-onset accuracy (the load-bearing risk)** — bad timing on "Ptolemaic"/numbers would break the whole VO-drives-timing premise | **Don't transcribe — use Piper's own phoneme durations (exact by construction); aeneas forced-alignment fallback; whisper NOT used for timing** (§3.3 step 4). The §3.6 failure detector (monotonicity, coverage ±5%, plausible durations, token-count match) makes the fallback first-class; two failures abort rather than ship bad sync. |
+| Text normalization mismatch (numbers/abbrevs spoken ≠ written) | `tts-voiceover` normalizes to spoken tokens and aligns against THAT, keeping a `spoken→display+beat` map (§3.3 step 2, §3.5 `spoken`/`display`). |
+| Piper leading silence offsets audio vs frame 0 | Trim Piper lead/tail silence before alignment so `t=0` of `vo.wav` is the first phoneme (§3.3 step 3). |
+| Seam rounding (beat boundaries vs caption windows disagree by a frame) | Round to integer frames **once** in `tts-voiceover`; store frames not seconds; all consumers read the same ints (§3.3 step 5, §3.5). |
+| Ducking pumps/chatters | Region-merge <300ms + attack ~60ms / release ~300ms envelope (§4). |
+| Host missing piper/aeneas or the **configured voice** | Preflight checks Piper + the *named* voice exists (and aligner if needed); pauses with install steps (§3.4). |
+| VO overruns target length | Writer targets 28–32s; **lower** `length_scale` toward ~0.95 (NOT raise) or, if that would go below ~0.9, **loop back to the writer to cut words** (3.5→3 edge, §3.2). |
+| Frame-map churn breaks audio cues | VO-derived map in `vo-timing.json` is the single source of truth; SFX cues recomputed from it, not hard-coded. |
+| Disclosure missed | Completeness gate adds "README disclosure = YES" — a **reminder, not enforcement** (can't flip the YouTube toggle; §3.1 `short-assembly`). |
 
 ---
 
