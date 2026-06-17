@@ -17,7 +17,7 @@ class TestE2E(unittest.TestCase):
                     "- [beat1] than the pyramids\n"
                     "<!-- NARRATION:END -->\n"
                     "<!-- FRAME-MAP:START -->\nOLD\n<!-- FRAME-MAP:END -->\n")
-        out = run(d, voice_path=VOICE)
+        out = run(d, voice=VOICE)
         self.assertGreater(out["total"], 0)
         self.assertTrue(os.path.isfile(os.path.join(d, "vo.wav")))
         self.assertIn("**Total**", open(os.path.join(d, "02-script.md")).read())

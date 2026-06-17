@@ -22,7 +22,7 @@ the VO-derived frame map into `02-script.md`. All timing logic is the bundled Py
 ## Run
 1. Preflight: `python3 scripts/run.py` calls `preflight`; if Kokoro or the named voice is missing,
    STOP and print the install steps (do not fake audio).
-2. `python3 scripts/run.py <run_dir> <voice_path>` →
+2. `python3 scripts/run.py <run_dir> <voice_name>` →
    normalizes numbers/abbrevs → Kokoro synth → trims silence → Kokoro-native word durations
    (aeneas fallback; failure detector gates both) → writes `vo.wav`, `vo-timing.json` (integer
    frames; `total` = durationInFrames; loop tail is a real beat entry), the ducking `envelope`, and

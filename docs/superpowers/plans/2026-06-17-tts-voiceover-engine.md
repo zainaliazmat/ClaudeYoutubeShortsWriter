@@ -881,12 +881,12 @@ git commit -m "feat(tts): kokoro/ffmpeg/aeneas I/O shell + preflight"
 **Interfaces:**
 - Consumes: all prior modules.
 - Produces:
-  - `align_with_fallback(spoken_text, tokens, voice_path, speed, out_wav, wav_len_frames_fn) -> list[tuple]`
+  - `align_with_fallback(spoken_text, tokens, voice, speed, out_wav, wav_len_frames_fn) -> list[tuple]`
     — try Kokoro-native durations; run `check_alignment`; on failure run `aeneas_align` and re-check;
     raise `RuntimeError` if both fail. (Pure-ish: takes the two aligner callables + the detector via
     injection so it is unit-testable WITHOUT binaries.)
-  - `run(run_dir, fps=30, voice_path=..., speed=1.0) -> dict` — full pipeline writing
-    `vo.wav` + `vo-timing.json`, patching `02-script.md`. CLI: `python3 run.py <run_dir> [voice_path]`.
+  - `run(run_dir, fps=30, voice=..., speed=1.0) -> dict` — full pipeline writing
+    `vo.wav` + `vo-timing.json`, patching `02-script.md`. CLI: `python3 run.py <run_dir> [voice]`.
 
 - [ ] **Step 1: Write the failing test (inject fake aligners to test the fallback decision without binaries)**
 
@@ -982,7 +982,7 @@ def _parse_narration(script_path):
     return beats
 
 
-def run(run_dir, fps=30, voice_path=None, speed=1.0):
+def run(run_dir, fps=30, voice=None, speed=1.0):
     from scripts.kokoro_io import synth_and_durations, aeneas_align
     script_path = os.path.join(run_dir, "02-script.md")
     out_wav = os.path.join(run_dir, "vo.wav")
@@ -997,7 +997,7 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0):
             return int(round(w.getnframes() / w.getframerate() * fps))
 
     def primary():
-        return synth_and_durations(spoken, voice_path, speed, out_wav)
+        return synth_and_durations(spoken, voice, speed, out_wav)
 
     def fallback():
         if not os.path.isfile(out_wav):
@@ -1007,7 +1007,7 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0):
     # align_with_fallback handles a raising primary (KokoroUnavailable) itself.
     times = align_with_fallback(primary, fallback, tokens, fps, _wav_len_frames())
 
-    timing = build_timing(times, tokens, fps=fps, voice=voice_path or "",
+    timing = build_timing(times, tokens, fps=fps, voice=voice or "",
                           speed=speed)
     timing["envelope"] = build_duck_envelope(timing["speech_regions"],
                                              timing["total"])
@@ -1023,7 +1023,7 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0):
 if __name__ == "__main__":
     rd = sys.argv[1]
     vp = sys.argv[2] if len(sys.argv) > 2 else None
-    out = run(rd, voice_path=vp)
+    out = run(rd, voice=vp)
     print("vo-timing.json total=%d frames, %d beats"
           % (out["total"], len(out["beats"])))
 ```
@@ -1081,7 +1081,7 @@ class TestE2E(unittest.TestCase):
                     "- [beat1] than the pyramids\n"
                     "<!-- NARRATION:END -->\n"
                     "<!-- FRAME-MAP:START -->\nOLD\n<!-- FRAME-MAP:END -->\n")
-        out = run(d, voice_path=VOICE)
+        out = run(d, voice=VOICE)
         self.assertGreater(out["total"], 0)
         self.assertTrue(os.path.isfile(os.path.join(d, "vo.wav")))
         self.assertIn("**Total**", open(os.path.join(d, "02-script.md")).read())
@@ -1123,7 +1123,7 @@ the VO-derived frame map into `02-script.md`. All timing logic is the bundled Py
 ## Run
 1. Preflight: `python3 scripts/run.py` calls `preflight`; if Kokoro or the named voice is missing,
    STOP and print the install steps (do not fake audio).
-2. `python3 scripts/run.py <run_dir> <voice_path>` →
+2. `python3 scripts/run.py <run_dir> <voice>` →
    normalizes numbers/abbrevs → Kokoro synth → trims silence → Kokoro-native word durations
    (aeneas fallback; failure detector gates both) → writes `vo.wav`, `vo-timing.json` (integer
    frames; `total` = durationInFrames; loop tail is a real beat entry), the ducking `envelope`, and

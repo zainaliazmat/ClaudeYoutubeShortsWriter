@@ -49,11 +49,9 @@ def _parse_narration(script_path):
     return beats
 
 
-def run(run_dir, fps=30, voice_path=None, speed=1.0, voice=None):
-    """voice is an alias for voice_path (short-form convenience)."""
+def run(run_dir, fps=30, voice=None, speed=1.0):
+    """voice is a Kokoro voice NAME (e.g. 'am_michael'), not a file path."""
     from scripts.kokoro_io import synth_and_durations, aeneas_align
-    if voice is not None and voice_path is None:
-        voice_path = voice
     script_path = os.path.join(run_dir, "02-script.md")
     out_wav = os.path.join(run_dir, "vo.wav")
 
@@ -70,7 +68,7 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0, voice=None):
             return int(round(w.getnframes() / w.getframerate() * fps))
 
     def primary():
-        return synth_and_durations(spoken, voice_path, speed, out_wav)
+        return synth_and_durations(spoken, voice, speed, out_wav)
 
     def fallback():
         if not os.path.isfile(out_wav):
@@ -79,7 +77,7 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0, voice=None):
 
     times = align_with_fallback(primary, fallback, tokens, fps, _wav_len_frames)
 
-    timing = build_timing(times, tokens, fps=fps, voice=voice_path or "",
+    timing = build_timing(times, tokens, fps=fps, voice=voice or "",
                           speed=speed)
     timing["envelope"] = build_duck_envelope(timing["speech_regions"],
                                              timing["total"])
@@ -97,6 +95,6 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0, voice=None):
 if __name__ == "__main__":
     rd = sys.argv[1]
     vp = sys.argv[2] if len(sys.argv) > 2 else None
-    out = run(rd, voice_path=vp)
+    out = run(rd, voice=vp)
     print("vo-timing.json total=%d frames, %d beats"
           % (out["total"], len(out["beats"])))
