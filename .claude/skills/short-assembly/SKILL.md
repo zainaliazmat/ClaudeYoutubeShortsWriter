@@ -35,7 +35,8 @@ Step 7 (final) of the `/short` pipeline. The run folder `output/F-NNN-<slug>/` a
 3. Hand 05-remotion-prompt.md to the Remotion skills to build the composition. **No VO → mix the music bed as the LEAD (~0.65–0.80), never ducked.** For the dark gradient, render 10-bit if you can (`--codec h265 --crf 18`, 10-bit pixel format) so the master can copy video.
 4. Render: `npx remotion render <entry> F-NNN-<slug> out.mp4`.
 5. **Master audio → two-pass `loudnorm` to -14 LUFS / ≤ -1 dBTP / LRA 11 (see 04-audio.md master target), output `final.mp4`, then VERIFY (`ffmpeg -i final.mp4 -af loudnorm=...:print_format=json -f null -` → integrated ≈ -14, peak ≤ -1).** Quiet masters are not boosted by YouTube. Upload `final.mp4`, not `out.mp4`.
-6. Upload: title/description from the script's metadata section.
+6. **Run `render-qa` (step 8) on `final.mp4` against `05-remotion-prompt.md`** — frame count, loop seam, brightness/black-screen, per-beat dead-space/collisions/mechanic, loudness. Do NOT upload on a FAIL; route the failure back to the responsible spec file, regenerate, and re-render.
+7. Upload: title/description from the script's metadata section.
 
 ## YouTube AI disclosure
 AI was used only for script/research production — **exempt** from YouTube's altered/synthetic-content disclosure. Toggle "Altered or synthetic content" ONLY if synthetic media (AI faces/voices/realistic scenes) is later added.

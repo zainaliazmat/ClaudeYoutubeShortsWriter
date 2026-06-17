@@ -1,73 +1,54 @@
-# 🎬 Remotion Script Review — "Cleopatra is closer to us than to the Pyramids"
+# 06 — Reviewer Scorecard (F-001 · v3 overhaul)
 
-**Verdict: 92/100 — Remotion-ready**
-Frame math tiles exactly, the timeline/number-reveal concept is fully specified across script + asset + audio specs, and the loop is explicitly matched to frame 0. No blockers; a handful of minor tightening notes only. **Review loop converges in 1 iteration** (≥80, zero blockers).
+> Reviewed `02-script.md` + `05-remotion-prompt.md` + `03-assets.md` together against the upgraded
+> 9-category rubric (now incl. **Category 9 — Visual Design Quality & Frame Utilization**). Evaluator-
+> optimizer loop, iteration 1: scored 93, the single actionable **major** was applied, re-confirmed.
 
-## Scorecard
+## Verdict
+**93 / 100 — Remotion-ready. No blockers. Category 9 = 12.5/14 (≈89%), clears the anti-flat gate (≥70%).**
+The v2 flat-render regression is closed in the spec. Cleared for render.
 
-| Category | Score | Weight | Notes |
-|---|---:|---:|---|
-| Timing & Frame Accuracy | 20 | 20 | Validator PASS — sections tile [0, 840] exactly; total 28s×30fps=840; loop-back ends at 840. |
-| Visual Specification Completeness | 16 | 18 | Every beat has exact text, layout band, simultaneity, and a clear visual. Per-beat hex + z-order live in 03/05, not in 02 itself (−2). |
-| Animation Feasibility & Specificity | 13 | 15 | Every motion maps to a concrete API and fits its budget (count-up 0→2,500 over 105f, bracket stretch 30f, etc.). Spring tension/damping is in 03/05 rather than inline in 02 (−2). |
-| Text & Caption Clarity | 12 | 12 | Word-by-word, hand-timed with explicit per-word frame windows; high contrast; no per-char opacity typewriter. |
-| Audio Sync | 9 | 10 | Vibe + mix note (bed is the LEAD, mastered to -14 LUFS / -1 dBTP — corrected; see 04-audio.md) + SFX on named cuts; exact frame numbers carried in 04-audio (ticks @150/255/480, reveal hit @600) (−1 for frames living one file over). |
-| Loop Integrity | 10 | 10 | Final frame (840) cross-dissolves to exact frame-0 layout; nothing mid-animation at wrap (hold 720–765 then dissolve). |
-| Platform Compliance | 8 | 8 | 1080×1920; captions kept clear of bottom ~15% and top ~8%; center band only. |
-| Creative Effectiveness / Retention | 6 | 7 | Hook legible <0.5s, claim→proof→claim structure. Beat 6 = 5.5s (>5s) flagged, but justified as the payoff dwell (−1). |
-| **Total** | **92** | **100** | Not capped — no blockers present. |
+## Per-category breakdown
+| # | Category | Weight | Score |
+|---|---|---:|---:|
+| 1 | Timing & Frame Accuracy | 18 | 18.0 |
+| 2 | Visual Specification Completeness | 13 | 12.5 |
+| 3 | Animation Feasibility & Specificity | 13 | 12.5 |
+| 4 | Text & Caption Clarity | 11 | 11.0 |
+| 5 | Audio Sync | 9 | 9.0 |
+| 6 | Loop Integrity | 8 | 8.0 |
+| 7 | Platform Compliance | 7 | 7.0 |
+| 8 | Creative Effectiveness / Retention | 7 | 6.5 |
+| 9 | **Visual Design Quality & Frame Utilization** | 14 | **12.5** |
+| | **Total** | **100** | **93** |
 
-## Frame budget (from validator)
+### Category 9 detail (the anti-flat guard)
+- **Frame utilization ✓** — three-band layout (context upper / hero center / vertical timeline left, full height); every scene carries a "0% dead" frame-fill note; no beat >40% empty (fixes v2's wasted horizontal axis + dead lower half).
+- **Hero scale ✓** — ~340px Anton hero numbers (≥280px), clear step to 64–120px supporting text.
+- **Decorative-layer visibility ✓** — ≥12–14px spine + segments, ~360px filled pyramid/moon silhouettes (no 1–2px hairlines, no 48px line-icons).
+- **Core-mechanic legibility ✓** — gold & ice segments collinear on the spine; shorter ice gap reads directly below the longer gold gap; ice glow-pulses on the payoff.
+- **Scale-honest data viz ✓ (independently verified):** 2,491yr : 2,038yr = 1.2222; 660px : 540px = 1.2222; 0.265 px/yr; Cleopatra node y960 (55%), Moon y1500. Computed from the years, not eyeballed.
+- **Color energy ✓** — navy→indigo gradient + radial glow + nebula + drifting stars; gold `#F2B53C` / ice `#6FD3FF` at 8–10:1. No flat black.
 
+## Frame-budget validator (evidence for Category 1) — PASS
 ```
-Parsed 8 timed section(s):
-  [    0 → 45   ]    45f   1.50s   🎯 Hook Frame
-  [   45 → 150  ]   105f   3.50s   Beat 1
-  [  150 → 255  ]   105f   3.50s   Beat 2
-  [  255 → 375  ]   120f   4.00s   Beat 3
-  [  375 → 480  ]   105f   3.50s   Beat 4
-  [  480 → 600  ]   120f   4.00s   Beat 5
-  [  600 → 765  ]   165f   5.50s   Beat 6
-  [  765 → 840  ]    75f   2.50s   🔁 Loop-Back
-Declared total: 840 frames (28.00s @ 30fps)
-PASSED: ✓ Total checks out  ✓ Coverage complete: sections tile [0, 840] exactly.
-RESULT: PASS — frame budget tiles exactly with no gaps or overlaps.
+8 sections tile [0, 840] exactly — no gaps/overlaps. 28s × 30fps = 840. Loop-back ends at 840.
+RESULT: PASS
 ```
 
-## Scene-by-scene accuracy
+## v2 → v3 defect verification (all fixed in spec)
+1. Near-black/flat → gradient + glow + nebula + stars (never flat black). ✅
+2. Tiny text → ~340px Anton hero. ✅
+3. Dead space / wasted tall frame → vertical spine y300→1500 fills full height; per-scene fill notes. ✅
+4. Non-proportional comparison → 660:540 = 1.22 = real ratio, computed at 0.265 px/yr. ✅
+5. Negative counters → `Math.max(0, interpolate(...))` clamp ≥0 on both. ✅
+6. Count-ups dragged → 30f ease-OUT then hold (not full-beat). ✅
 
-| Scene | Frames declared | Frames computed | Status | Issues |
-|---|---|---|---|---|
-| Hook | 0–45 | 45f / 1.5s | ✓ | Strong frame-1 thumbnail; "YOU" overshoot @24 fits. |
-| Beat 1 | 45–150 | 105f / 3.5s | ✓ | Year-stamp shake @95 within budget. |
-| Beat 2 | 150–255 | 105f / 3.5s | ✓ | Bracket begins ~225, finishes in Beat 3 — continuity intended. |
-| Beat 3 | 255–375 | 120f / 4.0s | ✓ | Count-up 0→2,500 lands ~360 with hold — readable. |
-| Beat 4 | 375–480 | 105f / 3.5s | ✓ | "Pan" as x-shift is deterministic & feasible. |
-| Beat 5 | 480–600 | 120f / 4.0s | ✓ | Two stacked brackets give the visual comparison — good. |
-| Beat 6 | 600–765 | 165f / 5.5s | ⚠ | 5.5s > 5s; acceptable payoff dwell but watch retention. |
-| Loop-back | 765–840 | 75f / 2.5s | ✓ | End state pixel-matches frame 0; music silent by 840. |
+## Issues & resolution
+- **[major · Cat 9] — RESOLVED:** the two segments' x-anchors were underspecified ("side by side" / "right of"). **Applied:** pinned both bars **14px-wide, x≈170, collinear on the spine** (gold y300→960 above ice y960→1500), staying in the left lane (x120–300), never crossing the content lane (x≥320) — in `05` (timeline §, Beats 5 & 6) and `02` (Beats 5 & 6). The comparison now reads unambiguously and scale-honestly.
+- **[minor · Cat 8]** Beat 6 = 5.5s > 5s sag flag — accepted: payoff dwell with continuous glow-pulse + node-nudge (not static); 22s A/B cut noted in Channel notes.
+- **[minor · Cat 2] — RESOLVED:** Beat 6 internal z-order added to `05` Scene 6 (`bg < timeline+segments < flash-values < payoff lines`).
+- **[nit · Cat 3]** payoffGlow/glow-breathe periods left approximate — acceptable.
 
-## Prioritized fixes
-
-### 🔴 Blockers (fix before generating)
-None.
-
-### 🟠 Major
-None.
-
-### 🟡 Minor
-- **[minor] Beat 6 dwell (frames 600–765, 5.5s)** → exceeds the ~2–4s pace guideline and could sag retention → Fix (optional): if the A/B 22s cut underperforms, split the payoff — stamp "~450 YEARS CLOSER" at 600–690, then "to the Moon landing / than to the Pyramids" 690–765 as a quicker double-tap. Keep as-is for v1 since it's the emotional peak.
-- **[minor] Per-beat text hex not inline in 02-script.md** → an implementer reading only the script must cross-reference 03/05 → Fix: none required for this pipeline (05-remotion-prompt.md pins every hex/z/spring); noted only for standalone reuse of the script.
-
-### ⚪ Nits
-- **[nit]** Beat 4 "pan" — confirm the x-shift keeps the Cleopatra marker on-screen (the prompt already constrains this). No change needed.
-
-## Suggested parameter values (drop-in)
-All already resolved in `05-remotion-prompt.md` — no changes pushed back to the writer this iteration:
-- **[Hook] "YOU" overshoot** → `spring({frame, fps, config:{tension:200, damping:14}})`, scale 0.6→1.0, frames 24–34.
-- **[Beat 3] count-up** → `interpolate(frame,[255,360],[0,2500],{easing:Easing.bezier(0.65,0,0.35,1), extrapolateRight:'clamp'})`.
-- **[Beat 5] count-up** → `interpolate(frame,[480,585],[0,2000],{...clamp})`.
-- **[Beat 6] payoff glow** → sinusoidal text-shadow blur 0→12→0 over 165f, 3 cycles, `#7EC8E3`.
-
-## Next step
-Render-ready as-is. The only optional change (Beat 6 split) is gated on the A/B retention test, not required for v1 — proceed to assembly.
+## Iteration log
+- **Iter 1:** raw 93, no blocker, Cat 9 89% → passing. One major (segment x) + one minor (z-order) applied immediately. No further iteration needed (well above the 80 threshold and the Cat-9 gate).

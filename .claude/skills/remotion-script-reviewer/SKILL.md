@@ -28,9 +28,13 @@ the counting. **You never compute frame budgets by hand.**
 ## Workflow (follow in order — don't skip the validator)
 
 ### 1. Parse the brief into structured sections
-Read the script. Identify: Overview/metadata, Hook, Beats[], Loop-Back, Captions, Audio, and
-any channel/platform notes. If the script is prose rather than a structured template, infer
-these sections and note that the structure was loose (it's harder to implement).
+Read the script (`02-script.md`). **Also read the composition spec (`05-remotion-prompt.md`) and
+asset spec (`03-assets.md`) when they exist** — the per-beat font sizes, hex, y-positions, z-order
+and timeline geometry that Category 9 grades live there, not in the script. Identify:
+Overview/metadata, Hook, Beats[], Loop-Back, Captions, Audio, and any channel/platform notes. If
+the script is prose rather than a structured template, infer these sections and note that the
+structure was loose (it's harder to implement). If `05` is not yet generated, score categories 1–8
+on the script and mark Category 9 as pending the composition spec.
 
 ### 2. Run the frame-budget validator — never do this math by hand
 ```bash
@@ -46,10 +50,14 @@ is a `blocker` and caps the score (see the rubric).
 is the *intended* signal that the budget failed — it is **not** a tool failure. The full
 report is on stdout; read it and proceed to score. Don't re-run or treat exit 1 as broken.
 
-### 3. Score the 8 categories
+### 3. Score the 9 categories
 Load `references/scoring-rubric.md`. Score each weighted category, apply the blocker gate
 (≥1 blocker → final score capped at 60), and keep the breakdown auditable. Use
 `references/spec-checklist.md` for the per-scene fields a complete spec must contain.
+**Category 9 (Visual Design Quality & Frame Utilization) is graded against `05`/`03`** — flag
+dead space (>40% of safe-area height empty in a beat), timid hero scale, invisible
+hairline/near-black decorative layers, an unreadable core mechanic, and scale-dishonest data viz.
+Per the rubric, **do not award a 90+ verdict if Category 9 is below ~70% of its weight**.
 
 ### 4. Map creative prose to Remotion APIs, scene by scene
 Load `references/remotion-knowledge.md`. For each scene, translate vague motion language into
@@ -86,7 +94,7 @@ explicitly asks. After the report, you may *offer* to apply the fixes; wait for 
 
 ## What's bundled
 - `scripts/validate_frame_budget.py` — deterministic frame-math/tiling/loop validator (step 2)
-- `references/scoring-rubric.md` — 8 categories, weights, severity defs, the blocker gate
+- `references/scoring-rubric.md` — 9 categories (incl. Visual Design Quality), weights, severity defs, the blocker gate
 - `references/spec-checklist.md` — per-scene required fields + common ambiguities
 - `references/remotion-knowledge.md` — API configs, gotchas, the prose→config translation table
 - `references/platform-safe-zones.md` — 1080×1920 margins per platform
