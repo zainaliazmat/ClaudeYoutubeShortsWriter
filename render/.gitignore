@@ -13,3 +13,7 @@ final.mp4
 # The canonical copies live under output/F-NNN/ (vo.wav) and output/F-NNN/assets/.
 public/*
 !public/.gitkeep
+
+# Per-run isolated public staging (audit #7) — render-run.mjs stages each run here
+# (render/.public-runs/<id>) and removes it after; never committed.
+.public-runs/
