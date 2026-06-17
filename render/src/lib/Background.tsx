@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { AbsoluteFill, interpolate, random, useCurrentFrame } from "remotion";
 import { WIDTH, HEIGHT } from "./safeArea";
+import { loopSafeDrift, loopSafePulse } from "./motion";
 
 // Persistent depth background (z:0, ALL frames) — NEVER flat single-hex (the
 // structural fix for F-001's near-black void). Vertical gradient + breathing
@@ -26,15 +27,22 @@ export const Background: React.FC<{
   /** y of the hero glow center (defaults to vertical center) */
   heroY?: number;
   starCount?: number;
-}> = ({ colors, totalFrames, heroY = HEIGHT / 2, starCount = 70 }) => {
+  /**
+   * Close the loop seam (audit #4): make the persistent drift + glow pulse return to
+   * their frame-0 values at `totalFrames`, so frame (total-1) pixel-matches frame 0.
+   * Default false keeps the original (non-looping) motion so already-shipped renders
+   * are byte-identical. Codegen should pass `loopSafe` for new videos.
+   */
+  loopSafe?: boolean;
+}> = ({ colors, totalFrames, heroY = HEIGHT / 2, starCount = 70, loopSafe = false }) => {
   const frame = useCurrentFrame();
 
-  const glowScale = interpolate(
-    Math.sin((frame / 120) * Math.PI * 2),
-    [-1, 1],
-    [1.0, 1.04],
-  );
-  const drift = interpolate(frame, [0, totalFrames], [0, -56]);
+  const glowScale = loopSafe
+    ? loopSafePulse(frame, totalFrames, Math.round(totalFrames / 120), [1.0, 1.04])
+    : interpolate(Math.sin((frame / 120) * Math.PI * 2), [-1, 1], [1.0, 1.04]);
+  const drift = loopSafe
+    ? loopSafeDrift(frame, totalFrames, 56)
+    : interpolate(frame, [0, totalFrames], [0, -56]);
 
   const stars = useMemo(
     () =>

@@ -26,6 +26,7 @@ export const Short: React.FC<ShortProps> = ({ audio }) => {
         colors={{ bgTop: COLORS.bgTop, bgBottom: COLORS.bgBottom, glow: COLORS.glow, nebula: COLORS.nebula, star: COLORS.text }}
         totalFrames={TOTAL}
         heroY={Y.hero}
+        loopSafe
       />
       <Timeline />
 
@@ -35,7 +36,7 @@ export const Short: React.FC<ShortProps> = ({ audio }) => {
       <Sequence from={SCENES.beat3.from} durationInFrames={SCENES.beat3.duration}><Beat3 /></Sequence>
       <Sequence from={SCENES.beat4.from} durationInFrames={SCENES.beat4.duration}><Beat4 /></Sequence>
       <Sequence from={SCENES.beat5.from} durationInFrames={SCENES.beat5.duration}><Beat5 /></Sequence>
-      <Sequence from={SCENES.beat6.from} durationInFrames={TOTAL - SCENES.beat6.from}><Beat6 /></Sequence>
+      <Sequence from={SCENES.beat6.from} durationInFrames={SCENES.beat6.duration}><Beat6 /></Sequence>
       <Sequence from={SCENES.loopBack.from} durationInFrames={SCENES.loopBack.duration}><LoopBack /></Sequence>
 
       <Captions words={words} style={CAPTION_STYLE} />

@@ -32,6 +32,11 @@ export const QUALITY_FLOORS = {
    * F-001's gradient stops average ~31.6 (below this), but the additive glow +
    * nebula + star layers lift the composited frame above it. So the codegen-time
    * rule is structural — see bgRule below — and this number is the pixel backstop.
+   *
+   * SINGLE SOURCE (finding N7): the QA engine enforces this SAME value via
+   * scripts/quality-floors.mjs `COMPOSITED_LUMA_MIN`. The render bundle keeps its
+   * own copy here (so it stays self-contained); quality-floors-agree.test.ts asserts
+   * the two never drift. If you change one, change both (the test will fail loudly).
    */
   bgLumaMin: 35,
   /** fraction of the safe frame that must carry content (anti dead-space) */
