@@ -948,9 +948,13 @@ from scripts.framemap import render_frame_map_table, patch_script_frame_map
 
 def align_with_fallback(primary, fallback, tokens, fps, wav_len_frames):
     """primary/fallback are zero-arg callables returning [(start_s,end_s)].
-    Returns the first whose alignment passes check_alignment; else RuntimeError."""
+    Returns the first whose alignment passes check_alignment; a RAISING aligner
+    counts as a failed attempt (spec §3.6). Raises RuntimeError if neither works."""
     for getter in (primary, fallback):
-        times = getter()
+        try:
+            times = getter()
+        except Exception:
+            continue
         words = build_timing(times, tokens, fps=fps)["words"]
         if check_alignment(words, wav_len_frames, len(tokens))["ok"]:
             return times
@@ -979,8 +983,7 @@ def _parse_narration(script_path):
 
 
 def run(run_dir, fps=30, voice_path=None, speed=1.0):
-    from scripts.kokoro_io import (synth_and_durations, aeneas_align,
-                                  KokoroUnavailable)
+    from scripts.kokoro_io import synth_and_durations, aeneas_align
     script_path = os.path.join(run_dir, "02-script.md")
     out_wav = os.path.join(run_dir, "vo.wav")
 
@@ -1001,12 +1004,8 @@ def run(run_dir, fps=30, voice_path=None, speed=1.0):
             raise RuntimeError("no vo.wav for aeneas fallback (kokoro failed)")
         return aeneas_align(spoken, out_wav)
 
-    try:
-        prim = primary
-    except KokoroUnavailable:
-        prim = lambda: (_ for _ in ()).throw(RuntimeError("kokoro unavailable"))
-
-    times = align_with_fallback(prim, fallback, tokens, fps, _wav_len_frames())
+    # align_with_fallback handles a raising primary (KokoroUnavailable) itself.
+    times = align_with_fallback(primary, fallback, tokens, fps, _wav_len_frames())
 
     timing = build_timing(times, tokens, fps=fps, voice=voice_path or "",
                           speed=speed)
