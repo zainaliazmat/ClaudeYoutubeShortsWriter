@@ -1,0 +1,12 @@
+{
+  "order": [
+    { "name": "hook", "from": 0 },
+    { "name": "beat1", "from": 95 },
+    { "name": "beat2", "from": 206 },
+    { "name": "beat3", "from": 306 },
+    { "name": "beat4", "from": 395 },
+    { "name": "beat5", "from": 447 },
+    { "name": "beat6", "from": 518 },
+    { "name": "loopBack", "from": 645 }
+  ]
+}
