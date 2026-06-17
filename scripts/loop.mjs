@@ -11,11 +11,14 @@
 //                  keep best render, re-render next iteration
 //   write a per-run iteration ledger; append a dated lesson per confirmed fix.
 //
-// Owners: script | voice | video | video(master) | human. Deterministic auto-fixers
-// exist for video(bg-near-black) [regenerate bg tokens from the 05 spec palette] and
-// video(master) [re-master]. script/voice/other-video defects are ATTRIBUTED and the
-// loop halts with HUMAN ACTION routing to the owning skill (those regenerations are
-// agent-driven). Run with: node --experimental-strip-types scripts/loop.mjs <run>
+// Owners: script | voice | video | video(master) | human. There is ONE deterministic
+// auto-fixer: video(bg-near-black) — regenerate the bg gradient tokens from the 05 spec
+// palette, AND only when the rewrite actually changes data.ts. EVERY other defect —
+// loudness/master, frame-count, seam, VO, script/voice — is ATTRIBUTED and the loop
+// halts with a HUMAN ACTION routing line. (A master re-run is NOT auto-applied: render
+// already two-pass masters, so an off-target result is a genuine failure, not a retry.)
+// Monotonicity: after a fix, the next render must strictly beat the prior best or the
+// loop aborts (decideMonotonic). Run: node --experimental-strip-types scripts/loop.mjs <run>
 
 import path from "node:path";
 import fs from "node:fs";
@@ -23,6 +26,7 @@ import { fileURLToPath } from "node:url";
 import { precheck } from "./precheck.mjs";
 import { probe, BAR } from "./qa-probe.mjs";
 import { renderRun } from "./render-run.mjs";
+import { parseSpecGradient, rewriteBgTokens, decideMonotonic } from "./loop-logic.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -45,15 +49,13 @@ function fixBgFromSpec(runDir, short) {
   const specPath = path.join(runDir, "05-remotion-prompt.md");
   const dataPath = path.join(ROOT, "render", "src", short, "data.ts");
   if (!fs.existsSync(specPath) || !fs.existsSync(dataPath)) return { applied: false };
-  const spec = fs.readFileSync(specPath, "utf8");
-  const m = /bg gradient `(#[0-9a-fA-F]{6})`[^\n]*?→\s*`(#[0-9a-fA-F]{6})`/.exec(spec);
-  if (!m) return { applied: false };
-  const [, top, bot] = m;
-  let data = fs.readFileSync(dataPath, "utf8");
-  data = data
-    .replace(/bgTop:\s*"#[0-9a-fA-F]{6}"/, `bgTop: "${top}"`)
-    .replace(/bgBottom:\s*"#[0-9a-fA-F]{6}"/, `bgBottom: "${bot}"`);
-  fs.writeFileSync(dataPath, data);
+  const grad = parseSpecGradient(fs.readFileSync(specPath, "utf8"));
+  if (!grad) return { applied: false, reason: "no bg gradient in 05-remotion-prompt.md (prose drift?)" };
+  const { top, bot } = grad;
+  const { text, changed } = rewriteBgTokens(fs.readFileSync(dataPath, "utf8"), top, bot);
+  if (!changed)
+    return { applied: false, reason: `bgTop/bgBottom tokens not found in ${short}/data.ts (codegen format drift?)` };
+  fs.writeFileSync(dataPath, text);
   return {
     applied: true,
     description: `regenerated bg gradient from 05 spec palette (${top} -> ${bot})`,
@@ -87,6 +89,7 @@ export async function loop(runArg, opts = {}) {
   const rounds = [];
   let best = { score: -1, file: null };
   let scriptRecuts = 0;
+  let fixedLastRound = false;
 
   for (let n = 1; n <= max; n++) {
     log(`=== iteration ${n}/${max} ===`);
@@ -135,6 +138,7 @@ export async function loop(runArg, opts = {}) {
     log(`qa: score=${qa.score} cat9=${qa.cat9} blockers=${qa.blockers.length} pass=${qa.pass}`);
 
     // keep best render (never overwrite a passing earlier attempt)
+    const prevBest = best.score;
     if (qa.score > best.score) {
       const bestPath = path.join(runDir, "final-best.mp4");
       fs.copyFileSync(path.join(runDir, "final.mp4"), bestPath);
@@ -154,6 +158,14 @@ export async function loop(runArg, opts = {}) {
       return { status: "PASS", score: qa.score, cat9: qa.cat9, best, rounds };
     }
 
+    // monotonicity: a prior auto-fix that yielded no score gain will just repeat on
+    // the next render — abort instead of burning the remaining iteration budget.
+    if (decideMonotonic(fixedLastRound, qa.score, prevBest)) {
+      writeLedger(runDir, rounds, `BAR-NOT-MET(best=${best.score}) HUMAN ACTION: auto-fix produced no score gain (monotonicity) — route to ${top?.owner || "video"}`);
+      log(`monotonicity abort at iteration ${n} (no gain after fix).`);
+      return { status: "BAR-NOT-MET-MONOTONIC", owner: top?.owner, best, rounds };
+    }
+
     // --- attribute + fix the top blocker ---
     if (!top) break;
     if (top.owner === "script") {
@@ -170,14 +182,12 @@ export async function loop(runArg, opts = {}) {
     }
     const res = fixer(runDir, short);
     if (!res.applied) {
-      writeLedger(runDir, rounds, `BAR-NOT-MET(best=${best.score}) HUMAN ACTION: ${top.owner} auto-fix failed (${top.evidence})`);
+      writeLedger(runDir, rounds, `BAR-NOT-MET(best=${best.score}) HUMAN ACTION: ${top.owner} auto-fix failed (${res.reason || top.evidence})`);
       return { status: "HALT-FIX-FAILED", owner: top.owner, best };
     }
     log(`auto-fix [${top.owner}]: ${res.description}`);
     if (res.lesson) appendLesson(res.lesson);
-
-    // monotonicity: next render must strictly beat best, else abort (no oscillation)
-    // (checked after the next qa; here we just guard the iteration budget)
+    fixedLastRound = true; // next iteration's QA must strictly beat best (decideMonotonic)
   }
 
   writeLedger(runDir, rounds, `BAR-NOT-MET(best=${best.score < 0 ? "none" : best.score}) HUMAN ACTION: max iterations reached; inspect final-best.mp4`);
