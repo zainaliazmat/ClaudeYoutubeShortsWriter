@@ -96,6 +96,9 @@ def run(run_dir, fps=30, voice=None, speed=1.0):
                           speed=speed)
     timing["envelope"] = build_duck_envelope(timing["speech_regions"],
                                              timing["total"])
+    # schemaVersion (audit #8): every machine-read artifact declares its shape so a
+    # downstream reader fails at the precheck gate, not deep in the render/frame map.
+    timing = {"schemaVersion": 1, **timing}
     with open(os.path.join(run_dir, "vo-timing.json"), "w") as f:
         json.dump(timing, f, indent=2)
 

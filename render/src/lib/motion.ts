@@ -152,3 +152,35 @@ export const crossDissolve = (
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+// ---- loop-seam primitives (audit #4) ----
+// For an invisible auto-loop, every PERSISTENT (all-frames) furniture animation must
+// return to its frame-0 value at `total`, or frame (total-1) won't pixel-match frame 0
+// (the qa-probe seam check flags this). A linear drift (0 -> -56) or an off-period
+// pulse leaves the tail mid-animation. These return value(0) === value(total) BY
+// CONSTRUCTION, so the loop seam is closed without a hand-tuned tail fade.
+
+/**
+ * loopSafeDrift — a smooth out-and-back drift: 0 at frame 0, peak `-maxDrift` at the
+ * midpoint, back to 0 at `total`. Use for a drifting star field / parallax layer so it
+ * pixel-matches frame 0 at the loop point. (Raised sine; value(0) === value(total) === 0.)
+ */
+export const loopSafeDrift = (frame: number, total: number, maxDrift: number): number =>
+  total <= 0 ? 0 : -maxDrift * Math.sin((frame / total) * Math.PI);
+
+/**
+ * loopSafePulse — a breathing scale/opacity that completes a WHOLE number of cycles
+ * over `total`, so it lands back at its start value at the loop point. `cycles` is
+ * rounded to the nearest integer (>=1). value(0) === value(total).
+ */
+export const loopSafePulse = (
+  frame: number,
+  total: number,
+  cycles: number,
+  range: [number, number] = [1, 1.04],
+): number => {
+  if (total <= 0) return range[0];
+  const n = Math.max(1, Math.round(cycles));
+  const s = Math.sin((frame / total) * Math.PI * 2 * n); // -1..1, whole cycles
+  return interpolate(s, [-1, 1], range);
+};

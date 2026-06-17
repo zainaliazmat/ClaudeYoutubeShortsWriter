@@ -1,0 +1,11 @@
+{
+  "name": "fathom-shorts-factory",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic engine (precheck / render-run / qa-probe / loop) for the Fathom Shorts Factory. Pure judgment is unit-tested here; the Remotion render lib is tested under render/.",
+  "scripts": {
+    "test:engine": "node --test scripts/__tests__/*.test.mjs",
+    "test:lib": "npm --prefix render run test:lib",
+    "test": "npm run test:engine && npm run test:lib"
+  }
+}

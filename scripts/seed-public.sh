@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
-# seed-public.sh <output/F-NNN-slug> — copy + CLEAN render/public/ for one run.
-# Wipes run-scoped files (vo.wav + audio binaries) from render/public, then copies
-# the run's vo.wav + output/F-NNN/assets/* fresh. Deterministic; no cross-run staleness.
-# Truly-static public files (none today) would be preserved by name allowlist.
+# seed-public.sh <output/F-NNN-slug> [TARGET_PUBLIC_DIR] — copy + CLEAN a public/
+# dir for one run. Wipes run-scoped files (vo.wav + audio binaries) from the target,
+# then copies the run's vo.wav + output/F-NNN/assets/* fresh. Deterministic; no
+# cross-run staleness. Truly-static public files (none today) preserved by name allowlist.
+#
+# TARGET_PUBLIC_DIR defaults to render/public (studio/dev). render-run.mjs passes a
+# per-run isolated dir (render/.public-runs/<id>) so concurrent renders never clobber
+# each other's staged binaries (audit #7).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-RENDER_PUBLIC="$ROOT/render/public"
 
-RUN="${1:?usage: seed-public.sh output/F-NNN-slug}"
+RUN="${1:?usage: seed-public.sh output/F-NNN-slug [TARGET_PUBLIC_DIR]}"
 # Accept either an absolute path or a repo-relative one.
 case "$RUN" in
   /*) RUN_DIR="$RUN" ;;
   *)  RUN_DIR="$ROOT/$RUN" ;;
 esac
 [ -d "$RUN_DIR" ] || { echo "seed-public: run folder not found: $RUN_DIR" >&2; exit 1; }
+
+# Optional explicit target public dir (absolute or repo-relative); default render/public.
+TARGET="${2:-$ROOT/render/public}"
+case "$TARGET" in
+  /*) RENDER_PUBLIC="$TARGET" ;;
+  *)  RENDER_PUBLIC="$ROOT/$TARGET" ;;
+esac
 
 mkdir -p "$RENDER_PUBLIC"
 
@@ -35,5 +45,5 @@ if [ -d "$RUN_DIR/assets" ]; then
     -exec cp {} "$RENDER_PUBLIC/" \;
 fi
 
-echo "seed-public: render/public seeded from $(basename "$RUN_DIR"):"
+echo "seed-public: ${RENDER_PUBLIC#$ROOT/} seeded from $(basename "$RUN_DIR"):"
 ls -1 "$RENDER_PUBLIC" | grep -v '^.gitkeep$' | sed 's/^/    /' || true
