@@ -1,7 +1,7 @@
-# F-001 — Visual Assets (spec) — v3
+# F-001 — Visual Assets (spec) — v4 (VO-driven)
 
-> Kinetic typography, 1080×1920 @ 30fps, 840 frames (28s).
-> **v3 visual overhaul:** the v2 render was near-black and empty (a thin grey timeline + tiny 48px line-icons + an 18:1 mono-on-black wash). v3 rebuilds the design to *earn the full 9:16 frame*: a deep **navy→indigo gradient** background with a radial hero glow + nebula wash, **hero type ≥ ~280px** in a high-impact display face, **LARGE filled motif silhouettes** (~360px pyramid top node, ~360px moon disc bottom node), and **thick growing comparison segments (≥12px)** in real chroma gold/ice-blue. Facts and the frame map are unchanged from the script — this file changes *look*, not content.
+> Kinetic typography, 1080×1920 @ 30fps, **930 frames (31s)** — durationInFrames from `vo-timing.json` (Kokoro VO).
+> **v4 carries the v3 visual overhaul** (navy→indigo gradient bg + radial glow + nebula, hero type ~340px Anton, ~360px filled pyramid/moon motifs, thick growing comparison segments) **and adds the design-§5 denser visuals** so the ~31s VO never reads as static: **date ticks + era labels along the spine**, a **shared-baseline comparison** on the payoff, and a **brighter rest-state pyramid** (lit from frame 0, not muddy). Facts unchanged.
 > All assets are spec-only — no downloads. All sources are logo-free and contain no identifiable faces.
 
 ---
@@ -77,6 +77,12 @@ All animations Remotion `spring()` / `interpolate()` (no CSS keyframes) unless n
   - **Moon disc ~360px** — solid pale-`#6FD3FF`/off-white radial-fill circle with subtle crater shading anchoring the **BOTTOM** node, soft ice glow. Present in Hook, Beat 4, Beat 6. A small rocket + launch-flash sits beside it in Beat 4 (scaled ~120px, not tiny).
 - **Hero-scale type:** primary years/words at **~340px** Anton (script spec), stepping down to ~90–120px context kickers and ~64px captions — a clear three-tier hierarchy that dominates the frame.
 - **Comparison beats use thick growing bars:** the gold (660px) and ice-blue (540px) segments are **≥12px-wide filled bars that grow proportionally** (true 1.22 ratio), sitting side by side in Beat 6 so the blue is *visibly shorter* — no hairline strokes for the data-viz.
+
+## Denser visuals (design §5 — fill the frame across the VO)
+- **Date ticks along the spine:** faint `#5B6BA8` @ ~45% tick marks (each ~18px wide) at regular intervals down the timeline spine, with small labels at the anchors only (2560 BC top, 1969 bottom, 69 BC at the Cleopatra node). Fills the right band the v3 layout left sparse; computed from the same px/yr scale (0.265 px/yr) so ticks are scale-honest, not decorative noise.
+- **Era labels:** `#F4F1E8` @ ~70%, ~52px, set beside the spine — **"Old Kingdom"** near the pyramid (Beat 1), **"Ptolemaic"** near the Cleopatra node (Beat 2), **"Space Age"** near the Moon (Beat 4). They ride in with the node they annotate and persist faintly, giving the empty right band semantic content.
+- **Shared-baseline comparison (Beat 6 payoff):** in addition to the collinear-on-spine view, the payoff briefly renders the two gaps as **two bars from a shared baseline at the Cleopatra node** — gold up (660px), blue down (540px) — so the ~450-yr difference reads at a glance as two unequal bars, not just a single longer line. Both proportional to the values.
+- **Brighter rest-state pyramid:** the pyramid silhouette is a **lit warm-gold fill from frame 0** (`#F2B53C` ~85%, soft glow), not a muddy dark-brown that only lights on the payoff (the v3 render note). The moon disc is likewise pale-lit at rest.
 
 ---
 
