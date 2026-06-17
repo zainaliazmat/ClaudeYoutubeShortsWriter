@@ -122,12 +122,15 @@ export function assessMetrics(m, c = THRESH) {
       "video", "render hero type + depth layers (lib Background + Captions); never a flat fill",
       "a bright void still fails — Cat-9 must not pass on brightness alone");
 
-  // B1. dynamics collapse: a correctly-loud master can still be over-compressed
-  // (loudnorm linear=false squashes LRA). Warn so it's caught before publish.
+  // B1. dynamics collapse: a correctly-loud master can still read as over-compressed.
+  // Proven NOT a master-flag problem — linear=true is byte-identical here because the
+  // pre-master mix is quiet + peaky (isolated SFX transients force loudnorm into dynamic
+  // mode for the +6 dB it needs). The fix is upstream in the mix. Warn before publish.
   if (Number.isFinite(m.LRA) && m.LRA < c.LRA_MIN)
     warn("narrow loudness range",
       `LRA ${m.LRA} (< ${c.LRA_MIN}) — dynamics collapsed (loudnorm linear=false?)`,
-      "video (master)", "master with linear=true, or skip mastering an already-on-target mix",
+      "video (mix)",
+      "tame SFX transient peaks (lower/limit the SFX bus) and raise the VO/bed body so the master needs only a small near-linear gain",
       "flat dynamics read as lifeless even at -14 LUFS");
 
   // B2. ducking: cannot be measured from the inseparable final mix, so verify the
