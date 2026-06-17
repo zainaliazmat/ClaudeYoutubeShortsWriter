@@ -31,6 +31,22 @@ Faceless **Fathom** YouTube Shorts channel. Videos are written as frame-timed sc
 
 1. Every claim in the script (narration + on-screen) is sourced in `01-verified-facts.md`. 2. Audio is monetization-safe with license recorded, bed ducks under the VO, **and specifies the -14 LUFS / ≤ -1 dBTP master target**. 3. `vo.wav` + `vo-timing.json` present; captions derived from the VO word frames. 4. Frame math passes the validator on the VO-patched map. 5. README AI-disclosure = YES (synthetic voice). If any fail, keep working.
 
+## The renderer (`render/`)
+
+`render/` is the Remotion v4 project (React 19, TS, 1080×1920 @ 30fps) that turns a `/short`
+spec package into an MP4. It is a **monorepo subtree**, not a separate clone — one repo, one
+pipeline. Its `node_modules/` and `.venv-tts/` (repo root) are gitignored and rebuilt by
+`scripts/bootstrap.sh`. See `SETUP.md` for first-run.
+
+- **Bootstrap:** `bash scripts/bootstrap.sh` (venv + `render/` npm i + seed public). `make doctor`
+  asserts node/npm/ffmpeg/ffprobe/python/venv/espeak and prints each gap as `missing X → install Y`.
+- **`render/public/` = copy + clean, gitignored.** Run-scoped only (`vo.wav`, music, SFX),
+  repopulated fresh each render by `scripts/seed-public.sh` from the active `output/F-NNN/`
+  (canonical copies: `output/F-NNN/vo.wav`, `output/F-NNN/assets/*`). No symlinks, no staleness.
+- **Compositions** live under `render/src/F-NNN/` (per-video scene `.tsx`) on top of the shared
+  primitive library `render/src/lib/` (motion, captions, audio bed, background, safe-area/quality
+  floors). F-001's original bespoke code is under `render/src/cleopatra/`.
+
 ## Conventions
 
 - IDs: Facts=`F`, Data=`D`, Explainer=`E`, Code=`C`, Comparison=`X`, then `-NNN`.
