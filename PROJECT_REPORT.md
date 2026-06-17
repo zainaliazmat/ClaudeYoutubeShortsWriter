@@ -52,7 +52,7 @@ ScriptWriter/
 ├── .claude/
 │   ├── commands/short.md     # the /short slash command (orchestrator entrypoint)
 │   ├── agents/asset-scout.md # web-heavy asset-sourcing subagent
-│   └── skills/               # 10 single-purpose skills (the pipeline stages)
+│   └── skills/               # 9 single-purpose skills (the pipeline stages)
 │       ├── niche-memory/            # step 1  — pick a fresh topic, open run folder
 │       ├── youtube-shorts-writer/   # step 3  — write the frame-timed script
 │       ├── tts-voiceover/           # step 3.5 — Kokoro VO + timing contract
@@ -61,8 +61,7 @@ ScriptWriter/
 │       ├── remotion-script-reviewer/  # step 6 — score/validate before render
 │       ├── remotion-codegen/        # step 7  — emit per-video Remotion .tsx
 │       ├── render-qa/               # step 8  — rich post-render pixel QA (human gate)
-│       ├── short-assembly/          # step 9  — package + record side-effects
-│       └── scriptwriter-skill/      # QUARANTINED (fictional screenplay, not used)
+│       └── short-assembly/          # step 9  — package + record side-effects
 │
 ├── content/                  # channel state
 │   ├── NICHES.md             # niche playbook
@@ -420,7 +419,6 @@ Skills are single-purpose with markdown I/O contracts; subagents isolate web-hea
 | `remotion-codegen` | skill | 7 — emit `.tsx` |
 | `render-qa` | skill | 8/10 — rich post-render pixel QA |
 | `short-assembly` | skill | 9 — package + record |
-| `scriptwriter-skill` | skill | **quarantined** — fictional screenplay, NOT in this pipeline |
 
 ---
 
