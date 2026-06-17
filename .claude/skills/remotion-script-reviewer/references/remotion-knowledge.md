@@ -114,10 +114,14 @@ const scale = spring({ frame, fps, config: { damping: 10, stiffness: 100 },
   highlighting. ⚠VERSION: requires Remotion v4.0.216+.
   - Low `combineTokensWithinMilliseconds` (~200–500ms) → word-by-word.
   - High (~1200–2000ms) → multiple words per page.
-- Captions are generated via Whisper (`@remotion/install-whisper-cpp`,
-  `@remotion/openai-whisper`, or in-browser `@remotion/whisper-web`) then formatted.
-- Reviewer check: if a script says "word-by-word captions", that's a real, supported path
-  — confirm it names a generation method (Whisper) or says captions are hand-timed to beats.
+- **This pipeline's captions come from `vo-timing.json`** — the tts-voiceover step already emits
+  exact integer word frames (display string per word), so captions are built directly from those,
+  NOT transcribed. (Whisper — `@remotion/install-whisper-cpp` / `@remotion/openai-whisper` /
+  `@remotion/whisper-web` — is the generic path when you DON'T already have word timing; we do, so
+  skip it. Whisper is timing-by-ASR and would re-introduce the drift the JSON avoids.)
+- Reviewer check: if a script says "word-by-word captions", confirm they're generated from
+  `vo-timing.json` word frames (VO default) — or hand-timed to beats for a no-VO Short. Flag a spec
+  that says "use Whisper" when a `vo-timing.json` exists: that's redundant and less accurate.
 
 ## 7. Audio (`@remotion/media` `<Audio>`)
 

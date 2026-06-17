@@ -20,19 +20,26 @@ the VO-derived frame map into `02-script.md`. All timing logic is the bundled Py
   Voices ship with the `kokoro` package; weights auto-download from Hugging Face (Apache-2.0).
 
 ## Install (one-time, on the host where `/short` runs)
+Kokoro pulls in torch (multi-GB), and most modern distros mark system Python
+"externally managed" (PEP 668), so install into a **virtualenv** at the repo root:
 ```bash
-pip install kokoro misaki soundfile numpy   # Python TTS + G2P + WAV I/O (all required)
-sudo apt-get install -y espeak-ng ffmpeg     # phonemizer + audio (system)
-pip install aeneas                            # OPTIONAL: forced-alignment fallback (hard to build)
+python3 -m venv .venv-tts                          # one-time; .venv-tts/ is gitignored
+.venv-tts/bin/pip install kokoro misaki soundfile numpy   # TTS + G2P + WAV I/O
+# espeak-ng (phonemizer) ships INSIDE the misaki dep `espeakng-loader` — no apt/sudo
+# needed; the engine points PHONEMIZER_ESPEAK_LIBRARY at it automatically. Install
+# the system pkg only if you prefer it: sudo apt-get install -y espeak-ng
+# ffmpeg must be on PATH (silence-trim + envelope + master). aeneas is the OPTIONAL
+# forced-alignment fallback (hard to build) — the Kokoro native path is primary.
 ```
-Kokoro-82M weights auto-download from Hugging Face on first run (Apache-2.0). `soundfile`/`numpy` are
-NOT optional — the primary synth path writes the WAV with them.
+Kokoro-82M weights auto-download from Hugging Face on first run (Apache-2.0); a spaCy
+`en_core_web_sm` model also downloads once. `soundfile`/`numpy` are NOT optional — the
+primary synth path writes the WAV with them.
 
 ## Run
 The CLI preflights, then runs. On a missing dep / unknown voice it STOPS and prints exactly what to
-install (it does not fake audio):
+install (it does not fake audio). Use the venv's interpreter:
 ```bash
-python3 scripts/run.py <run_dir> [voice] [--fps 30] [--speed 1.0]
+.venv-tts/bin/python scripts/run.py <run_dir> [voice] [--fps 30] [--speed 1.0]
 # voice defaults to am_michael; candidates: am_michael / bm_george / af_bella
 # speed > 1.0 = faster/shorter (Kokoro convention)
 ```
@@ -52,5 +59,16 @@ re-round from seconds.
   words (do not ship bad sync or a too-long VO).
 
 ## Tests
-`cd .claude/skills/tts-voiceover && python3 -m unittest discover -s tests -v`
-(The e2e test self-skips unless `KOKORO_VOICE` + `kokoro` are installed.)
+`cd .claude/skills/tts-voiceover && ../../../.venv-tts/bin/python -m unittest discover -s tests -v`
+(Stdlib-only unit tests run under any python3; the two e2e tests run live when `kokoro` +
+the voice are installed and self-skip otherwise. `test_real_audio_token_timing_alignment`
+is the regression guard for Kokoro's per-word timing — token-count match + ±15% coverage
+over the year/`BC` normalization hazard.)
+
+## Verified Kokoro timing API (build: `kokoro` 0.9.4)
+`KPipeline(lang_code=voice[0])(text, voice=…, speed=…)` yields `Result` objects; each
+`result.tokens[i]` carries per-**word** `.start_ts`/`.end_ts` (seconds) + `.text`.
+Punctuation (`.`/`,`) arrives as separate timed tokens — `kokoro_io` filters those so the
+word stream aligns 1:1 with the normalized spoken tokens. If a future Kokoro build changes
+this granularity, the §3.6 detector trips the aeneas fallback; fix `synth_and_durations`
+to restore the per-word `(start_s, end_s)` contract.

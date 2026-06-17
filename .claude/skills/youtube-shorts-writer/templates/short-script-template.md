@@ -1,6 +1,21 @@
-# Short Script Template (Remotion-ready)
+# Short Script Template (Remotion-ready, VO-driven)
 
-Fill every section. Delete the parenthetical guidance. Times assume 30fps — give frame counts so it drops straight into a Remotion `<Composition>`.
+Fill every section. Delete the parenthetical guidance. **The voiceover drives the timing:** you write the Narration + a rough per-beat target in seconds; step 3.5 (tts-voiceover) synthesizes the VO and patches the real integer frames into the frame-map block below. Do NOT hand-pin final frame ranges.
+
+---
+
+## 🎙️ Narration (spoken VO — drives the timing)
+> Full natural sentences the voice reads aloud. **Spoken ≠ caption** (on-screen text stays fragments). Facts ONLY from `01-verified-facts.md`. Target ~28–32s total (~80–95 words). One line per spoken chunk, tagged with its beat id.
+
+<!-- NARRATION:START -->
+- [hook] (the spoken hook sentence)
+- [beat1] (spoken sentence)
+- [beat2] (spoken sentence)
+<!-- NARRATION:END -->
+
+## 🎞️ Frame map (filled by step 3.5 — leave empty)
+<!-- FRAME-MAP:START -->
+<!-- FRAME-MAP:END -->
 
 ---
 
@@ -8,42 +23,45 @@ Fill every section. Delete the parenthetical guidance. Times assume 30fps — gi
 - **Working title:** (internal, not on-screen)
 - **Format:** (kinetic typography / data viz / ranking / list-countdown / explainer / code / comparison)
 - **Niche:** (the recurring channel niche this belongs to)
-- **Total runtime:** XX s  (= XXX frames @ 30fps)
+- **Target runtime:** ~XX s (~28–32s) — `durationInFrames` is set by the VO in 3.5, not declared here
 - **One-line premise:** (what the viewer learns/feels in one sentence)
 
 ---
 
-## 🎯 Hook Frame — 0.0s to 1.5s (frames 0–45)
-> This is the thumbnail. It must be legible in <0.5s and promise the payoff.
+## 🎯 Hook Frame — target ~0–1.5s
+> This is the thumbnail. It must be legible in <0.5s and promise the payoff. Frame 0 opens on the hook narration (no silent lead).
 
-- **On-screen text:** "(the exact words — bold, big, ≤6 words)"
+- **Narration (spoken):** "(matches the [hook] line above)"
+- **On-screen text:** "(the exact words — bold, big, ≤6 words; a fragment, not the spoken sentence)"
 - **Visual:** (the striking opening composition — what's animating, colors, layout)
 - **Why it stops the swipe:** (one line — curiosity gap / bold claim / surprising visual)
 
 ---
 
-## 🎬 Beats (~3s each — one cut per beat, new beat every 5–7s of narrative)
+## 🎬 Beats (~3s target each — one cut per beat)
+> Give each beat a rough target in seconds. The real frame range comes from the VO (step 3.5).
 
-### Beat 1 — 1.5s–4.5s (frames 45–135)
+### Beat 1 — target ~3s
+- **Narration (spoken):** "(matches the [beat1] line)"
 - **On-screen text:** "(caption-style fragment)"
 - **Visual / animation:** (one line Remotion can implement — e.g. "bar grows L→R, number counts 0→47")
-- **Voiceover/narration (optional):** "(if using TTS — else leave blank)"
 
-### Beat 2 — 4.5s–7.5s (frames 135–225)
-- **On-screen text:** "..."
-- **Visual / animation:** ...
-- **Voiceover (optional):** "..."
-
-### Beat 3 — 7.5s–10.5s (frames 225–315)
+### Beat 2 — target ~3s
+- **Narration (spoken):** "..."
 - **On-screen text:** "..."
 - **Visual / animation:** ...
 
-*(Add beats to fill the runtime. Keep each ~3s. Each beat advances info or escalates curiosity — if it does neither, cut it.)*
+### Beat 3 — target ~3s
+- **Narration (spoken):** "..."
+- **On-screen text:** "..."
+- **Visual / animation:** ...
+
+*(Add beats to fill ~28–32s of narration. Keep each ~3s. Each beat advances info or escalates curiosity — if it does neither, cut it.)*
 
 ---
 
-## 🔁 Loop-Back — final ~1s (last frames → frame 0)
-> Make the auto-loop invisible so replays compound the view count.
+## 🔁 Loop-Back — final ~1s (silent tail → frame 0)
+> Make the auto-loop invisible so replays compound the view count. The tail is silent (VO ended, music fades out).
 
 - **Final frame composition:** (describe how it visually matches the Hook Frame — same colors/layout/text position)
 - **The loop trick:** (e.g. "final question is answered by the hook text → rewatch to confirm", or "camera/element lands exactly where frame 0 begins")
@@ -51,15 +69,16 @@ Fill every section. Delete the parenthetical guidance. Times assume 30fps — gi
 ---
 
 ## 💬 Captions
-- **Style:** burned-in, large, high-contrast, word-by-word (faceless content lives on on-screen text)
-- **Generation:** Remotion `@remotion/captions` / Whisper if narrated; otherwise hand-timed to beats
+- **Style:** burned-in, large, high-contrast, **word-by-word synced to the VO**
+- **Generation:** emitted in step 5 from `vo-timing.json` integer word frames (NOT Whisper, NOT hand-typed windows) — captions show the display string per word
 - **Safe zone:** keep text clear of the bottom ~15% (YouTube UI) and away from the very top
 
 ---
 
-## 🔊 Audio
-- **Track vibe:** (trending sound or royalty-free; describe energy/tempo)
-- **Mix note:** no voiceover → the music bed is the LEAD — mix it loud, never "under" anything; punch-in SFX on key cuts. Final render mastered to -14 LUFS / ≤ -1 dBTP (see asset-sourcing `audio-mastering.md`).
+## 🔊 Audio (VO is the lead)
+- **Voice:** Kokoro voice name (e.g. am_michael / bm_george / af_bella) — set in step 3.5
+- **Track vibe:** (royalty-free bed; describe energy/tempo)
+- **Mix note:** VO is the LEAD; the music bed **ducks under the voice** (~0.72 → ~0.22 during speech) and swells on the payoff; SFX punch the key cuts. Final render mastered to -14 LUFS / ≤ -1 dBTP (see asset-sourcing `audio-mastering.md`).
 
 ---
 

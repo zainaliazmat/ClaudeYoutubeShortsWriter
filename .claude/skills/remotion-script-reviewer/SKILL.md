@@ -41,10 +41,14 @@ on the script and mark Category 9 as pending the composition spec.
 python3 ${CLAUDE_SKILL_DIR}/scripts/validate_frame_budget.py <path-to-script> 2>&1
 ```
 (If the script is pasted inline rather than a file, write it to a temp file first, then run
-the validator on it.) The script parses the declared total, every `frames A–B` range, and the
-loop-back, then reports gaps/overlaps/total-mismatch with specific, quotable errors. **Quote
-its output** in the report — that's the evidence for the Timing category. Any BLOCKING ERROR
-is a `blocker` and caps the score (see the rubric).
+the validator on it.) **VO-driven runs:** when a `vo-timing.json` sits beside the script (the
+channel default), the validator reads `total` (= durationInFrames) from it and tiles the
+frame-map **table** the tts-voiceover step patched between the `<!-- FRAME-MAP -->` markers.
+With no VO it falls back to the declared total + `frames A–B` heading ranges (the no-VO path).
+Either way it reports gaps/overlaps/total-mismatch with specific, quotable errors. **Quote its
+output** in the report — that's the evidence for the Timing category. (Run it on the script IN
+the run folder so it can find `vo-timing.json`; a temp-file copy loses that sibling.) Any
+BLOCKING ERROR is a `blocker` and caps the score (see the rubric).
 
 **Note on exit codes:** the validator exits non-zero (1) when it finds blocking errors. That
 is the *intended* signal that the budget failed — it is **not** a tool failure. The full
