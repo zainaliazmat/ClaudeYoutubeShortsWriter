@@ -10,11 +10,14 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { validateTiling } from "../render/src/lib/tiling.ts";
 import { gradientLuma } from "../render/src/lib/safeArea.ts";
+import { checkSchemaVersion } from "./schema.mjs";
+import { BG_STOP_LUMA_MIN } from "./quality-floors.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, "..");
-const NEAR_BLACK_LUMA = 15; // gradient-stop avg below this is clearly near-black
-                            // (F-001's legit 31.6 passes; depth layers lift the render)
+// gradient-stop avg below this is clearly near-black (F-001's legit 31.6 passes;
+// depth layers lift the render). Single source: scripts/quality-floors.mjs.
+const NEAR_BLACK_LUMA = BG_STOP_LUMA_MIN;
 
 export function precheck(runArg) {
   const runDir = path.isAbsolute(runArg) ? runArg : path.join(ROOT, runArg);
@@ -43,7 +46,17 @@ export function precheck(runArg) {
   // --- tiling over scene ranges ---
   if (fs.existsSync(scenesPath) && fs.existsSync(voPath)) {
     const vo = JSON.parse(fs.readFileSync(voPath, "utf8"));
-    const order = JSON.parse(fs.readFileSync(scenesPath, "utf8")).order || [];
+    const scenesObj = JSON.parse(fs.readFileSync(scenesPath, "utf8"));
+
+    // schemaVersion gate (audit #8): fail here with a clear "speaks vN" message
+    // instead of deep in the render / frame map. vo-timing is voice-owned (tts), the
+    // scene contract is video-owned (codegen).
+    const voSchema = checkSchemaVersion("vo-timing.json", vo.schemaVersion);
+    add("vo-timing-schema", voSchema.ok, "voice", voSchema.message, "re-run tts-voiceover to emit schemaVersion");
+    const scSchema = checkSchemaVersion("scenes.json", scenesObj.schemaVersion);
+    add("scenes-schema", scSchema.ok, "video", scSchema.message, "re-run remotion-codegen to emit schemaVersion");
+
+    const order = scenesObj.order || [];
     const sorted = [...order].sort((a, b) => a.from - b.from);
     const ranges = sorted.map((s, i) => ({
       from: s.from,
