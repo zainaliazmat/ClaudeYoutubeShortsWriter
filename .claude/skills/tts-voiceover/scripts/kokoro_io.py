@@ -5,6 +5,31 @@ import shutil
 import subprocess
 import tempfile
 
+
+def _ensure_espeak_env():
+    """Point phonemizer at the espeak-ng shared library. Prefer a system
+    install; else fall back to the `espeakng_loader` wheel that misaki pulls in
+    (it bundles libespeak-ng + data), so no apt/sudo is required. Idempotent."""
+    if shutil.which("espeak-ng") or shutil.which("espeak"):
+        return True
+    try:
+        import espeakng_loader
+        os.environ.setdefault("PHONEMIZER_ESPEAK_LIBRARY",
+                              espeakng_loader.get_library_path())
+        os.environ.setdefault("ESPEAK_DATA_PATH",
+                              espeakng_loader.get_data_path())
+        return True
+    except Exception:
+        return False
+
+
+def _is_word_token(tok):
+    """A Kokoro token is a WORD (not punctuation/whitespace) iff its text holds at
+    least one alphanumeric char. Kokoro emits '.'/',' etc. as their own timed
+    tokens; those are dropped so the word stream aligns 1:1 with normalize's."""
+    txt = getattr(tok, "text", None)
+    return bool(txt) and any(c.isalnum() for c in txt)
+
 # Kokoro-82M v1.0 bundled English voices (subset we use; full list in HF VOICES.md).
 KNOWN_VOICES = {
     "af_heart", "af_bella", "af_nicole", "af_sarah", "af_sky", "af_alloy",
@@ -34,8 +59,9 @@ def preflight(voice, need_aligner):
         import numpy  # noqa: F401
     except Exception:
         missing.append("soundfile/numpy not importable (pip install soundfile numpy)")
-    if shutil.which("espeak-ng") is None and shutil.which("espeak") is None:
-        missing.append("espeak-ng not on PATH (phonemizer)")
+    if not _ensure_espeak_env():
+        missing.append("espeak-ng unavailable: install the system pkg "
+                       "(apt install espeak-ng) or `pip install espeakng-loader`")
     if voice not in KNOWN_VOICES:
         missing.append("unknown voice: %s" % voice)
     if shutil.which("ffmpeg") is None:
@@ -49,9 +75,13 @@ def preflight(voice, need_aligner):
 
 
 def synth_and_durations(spoken_text, voice, speed, out_wav):
-    """Synthesize with Python Kokoro, collecting native per-token timestamps;
-    write a silence-trimmed out_wav; return per-WORD (start_s, end_s).
-    Raises KokoroUnavailable if kokoro/soundfile/timestamps aren't available."""
+    """Synthesize with Python Kokoro, collecting native per-WORD timestamps;
+    write a silence-trimmed out_wav; return per-WORD (start_s, end_s) for the
+    word tokens only (punctuation tokens are dropped so the result aligns 1:1
+    with normalize's spoken tokens). Raises KokoroUnavailable if kokoro/soundfile
+    aren't available or a word token lacks timing."""
+    if not _ensure_espeak_env():
+        raise KokoroUnavailable("espeak-ng unavailable (install espeakng-loader)")
     try:
         from kokoro import KPipeline
         import soundfile as sf
@@ -70,10 +100,15 @@ def synth_and_durations(spoken_text, voice, speed, out_wav):
             raise KokoroUnavailable("kokoro returned no audio+token timing")
         a = audio.detach().cpu().numpy() if hasattr(audio, "detach") \
             else np.asarray(audio)
+        # Keep WORD tokens only; '.'/',' etc. are separate timed tokens we drop.
         for t in toks:
+            if not _is_word_token(t):
+                continue
             ts, te = getattr(t, "start_ts", None), getattr(t, "end_ts", None)
             if ts is None or te is None:
-                raise KokoroUnavailable("kokoro token missing start_ts/end_ts")
+                raise KokoroUnavailable(
+                    "kokoro word token %r missing start_ts/end_ts"
+                    % getattr(t, "text", None))
             words.append((base + float(ts), base + float(te)))
         chunks.append(a)
         base += len(a) / float(sr)
@@ -116,18 +151,25 @@ def _parse_lead_silence(stderr_text, head_tol=0.05):
 
 
 def _trim_silence(in_wav, out_wav):
-    """Trim leading/trailing silence with ffmpeg silenceremove; return the
-    seconds of leading silence removed (so timestamps can be offset). Forces
-    PCM s16 output so stdlib `wave` can read the result downstream."""
+    """Trim ONLY the leading and trailing silence; return the seconds of leading
+    silence removed (so word timestamps can be offset onto the trimmed wav).
+
+    Interior silence (the inter-word pauses) is preserved — removing it would
+    desync every word timestamp from the audio and collapse the wav far below the
+    speech span. Both ends are trimmed with the standard `areverse` double-pass
+    (silenceremove with start_periods=1 only trims the leading run, then passes
+    the rest through; reversing turns the tail into a new lead and back).
+    Forces PCM s16 so stdlib `wave` can read the result downstream."""
     probe = subprocess.run(
         ["ffmpeg", "-i", in_wav, "-af",
          "silencedetect=noise=-50dB:d=0.05", "-f", "null", "-"],
         stderr=subprocess.PIPE)
     lead = _parse_lead_silence(probe.stderr.decode("utf-8", "ignore"))
+    trim_end = ("silenceremove=start_periods=1:start_silence=0.05:"
+                "start_threshold=-50dB")
     res = subprocess.run(
         ["ffmpeg", "-y", "-i", in_wav, "-af",
-         "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-50dB:"
-         "stop_periods=1:stop_silence=0.1:stop_threshold=-50dB",
+         "%s,areverse,%s,areverse" % (trim_end, trim_end),
          "-c:a", "pcm_s16le", out_wav],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if res.returncode != 0 or not os.path.isfile(out_wav) \
