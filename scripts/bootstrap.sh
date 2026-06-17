@@ -44,4 +44,4 @@ echo
 echo "Bootstrap complete. To render the F-001 baseline:"
 echo "    cd render && npx remotion render F-001-cleopatra-vs-pyramids out/F-001.mp4"
 echo "Or the full mastered pipeline:"
-echo "    scripts/render-run.sh output/F-001-cleopatra-vs-pyramids"
+echo "    node scripts/render-run.mjs output/F-001-cleopatra-vs-pyramids"

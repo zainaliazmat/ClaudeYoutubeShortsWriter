@@ -14,10 +14,10 @@ bootstrap:
 	@bash scripts/bootstrap.sh
 
 render-f001:
-	@bash scripts/render-run.sh output/F-001-cleopatra-vs-pyramids
+	@node scripts/render-run.mjs output/F-001-cleopatra-vs-pyramids
 
 render:
-	@bash scripts/render-run.sh $(RUN)
+	@node scripts/render-run.mjs $(RUN)
 
 clean-public:
 	@find render/public -maxdepth 1 -type f ! -name '.gitkeep' -delete && echo "render/public cleaned"
