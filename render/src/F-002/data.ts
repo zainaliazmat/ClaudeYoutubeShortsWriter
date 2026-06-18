@@ -41,16 +41,16 @@ export const CONTENT_LEFT = 300;
 export const CONTENT_RIGHT = 40;
 export const Y = { kicker: 360, hero: 900 } as const;
 
-// ---- Scene ranges DERIVED from scenes.json + TOTAL (validated by check-tiling.mjs) ----
+// ---- Scene ranges read STRAIGHT from scenes.json: each scene's `from` AND `duration`
+// are authored there (single source, validated by check-tiling.mjs + precheck). NO scene
+// computes its duration from TOTAL — that `TOTAL - from` pattern was this video's old
+// Beat6 loop-seam bug. ----
 type SceneName =
   | "hook" | "beat1" | "beat2" | "beat3" | "beat4" | "beat5" | "beat6" | "loopBack";
 const buildScenes = (): Record<SceneName, { from: number; duration: number }> => {
-  const order = sceneOrder.order;
   const out = {} as Record<SceneName, { from: number; duration: number }>;
-  order.forEach((s, i) => {
-    const next = i + 1 < order.length ? order[i + 1].from : TOTAL;
-    out[s.name as SceneName] = { from: s.from, duration: next - s.from };
-  });
+  for (const s of sceneOrder.order)
+    out[s.name as SceneName] = { from: s.from, duration: s.duration };
   return out;
 };
 export const SCENES = buildScenes();

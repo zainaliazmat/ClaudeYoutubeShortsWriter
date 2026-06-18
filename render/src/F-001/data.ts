@@ -56,19 +56,18 @@ export const Y = {
   hero: 900,
 } as const;
 
-// ---- Scene frame ranges — DERIVED from scenes.json (the single source of truth,
-// also read by check-tiling.mjs) + TOTAL. Contiguous, half-open: each scene runs to
-// the next scene's `from`; the last runs to TOTAL. Validated to tile [0, TOTAL]. ----
+// ---- Scene frame ranges — read STRAIGHT from scenes.json (the single source of truth,
+// also read by check-tiling.mjs + precheck). Each scene's `from` AND `duration` are
+// authored there; NO scene computes its own duration from TOTAL (that `TOTAL - from`
+// pattern was F-002's loop-seam bug). The authored {from,duration} are validated to tile
+// [0, TOTAL] by precheck (validateTiling on the raw durations). ----
 type SceneName =
   | "hook" | "beat1" | "beat2" | "beat3" | "beat4" | "beat5" | "beat6" | "loopBack";
 
 const buildScenes = (): Record<SceneName, { from: number; duration: number }> => {
-  const order = sceneOrder.order;
   const out = {} as Record<SceneName, { from: number; duration: number }>;
-  order.forEach((s, i) => {
-    const next = i + 1 < order.length ? order[i + 1].from : TOTAL;
-    out[s.name as SceneName] = { from: s.from, duration: next - s.from };
-  });
+  for (const s of sceneOrder.order)
+    out[s.name as SceneName] = { from: s.from, duration: s.duration };
   return out;
 };
 export const SCENES = buildScenes();

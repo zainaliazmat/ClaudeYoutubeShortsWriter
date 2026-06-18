@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import {
   normalizeCaptionText, captionMatchRatio, assessCaptionLegibility, CAPTION_MATCH_MIN,
+  captionSamplePlan,
   assessCutCadence, CADENCE,
   assessCutCorrespondence, CUT_MATCH,
   relativeLuminance, contrastRatio, assessCaptionContrast, WCAG_AA_MIN,
@@ -29,6 +30,35 @@ test("assessCaptionLegibility: warns below the floor, null above, null when noth
   assert.equal(f.blocker, false);
   assert.equal(f.owner, "video");
   assert.ok(CAPTION_MATCH_MIN > 0 && CAPTION_MATCH_MIN < 1);
+});
+
+// ---------- (d2) caption sampling plan — ONE sample per displayed token ----------
+// Regression guard for the old probe bug: it OCR'd a single frame at the MIDPOINT of
+// the whole speech region and compared it to EVERY word in the region, so a perfectly
+// legible word-by-word render scored ~1/N (≈6% on F-001). A correct plan samples each
+// token once, in its own stable display window, matched only to its own text.
+test("captionSamplePlan: one interior sample per token, matched to that token's text", () => {
+  const tokens = [
+    { display: "Cleopatra", start: 0, end: 19, beat: "hook" },
+    { display: "lived", start: 19, end: 27, beat: "hook" },
+    { display: "1969", start: 27, end: 60, beat: "beat5" },
+  ];
+  const plan = captionSamplePlan(tokens);
+  // one sample PER TOKEN — not one frame for the whole region
+  assert.equal(plan.length, tokens.length);
+  // each sample carries exactly its own token's display, in order
+  assert.deepEqual(plan.map((p) => p.display), ["Cleopatra", "lived", "1969"]);
+  // each frame lands in its token's interior, past the fade-in, before the end
+  plan.forEach((p, i) => {
+    const t = tokens[i];
+    assert.ok(p.frame > t.start && p.frame < t.end, `frame ${p.frame} inside (${t.start},${t.end})`);
+    assert.ok(p.frame >= Math.min(t.end - 1, t.start + 3), "samples the stable display, not the fade-in");
+  });
+});
+
+test("captionSamplePlan: empty / degenerate input -> empty plan", () => {
+  assert.deepEqual(captionSamplePlan([]), []);
+  assert.deepEqual(captionSamplePlan(null), []);
 });
 
 // ---------- (e) cut cadence ----------

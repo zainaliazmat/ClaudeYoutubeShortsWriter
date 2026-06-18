@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "order": [
-    { "name": "hook", "from": 0 },
-    { "name": "beat1", "from": 109 },
-    { "name": "beat2", "from": 259 },
-    { "name": "beat3", "from": 397 },
-    { "name": "beat4", "from": 493 },
-    { "name": "beat5", "from": 592 },
-    { "name": "beat6", "from": 702 },
-    { "name": "loopBack", "from": 855 }
+    { "name": "hook", "from": 0, "duration": 109 },
+    { "name": "beat1", "from": 109, "duration": 150 },
+    { "name": "beat2", "from": 259, "duration": 138 },
+    { "name": "beat3", "from": 397, "duration": 96 },
+    { "name": "beat4", "from": 493, "duration": 99 },
+    { "name": "beat5", "from": 592, "duration": 110 },
+    { "name": "beat6", "from": 702, "duration": 153 },
+    { "name": "loopBack", "from": 855, "duration": 75 }
   ]
 }

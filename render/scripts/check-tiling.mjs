@@ -36,12 +36,12 @@ if (!Array.isArray(order) || order.length === 0) {
   process.exit(1);
 }
 
-// Derive (from, duration): each scene runs to the next scene's `from`; last to total.
+// Validate the RAW authored (from, duration) from scenes.json — NOT durations re-derived
+// from consecutive `from`s. Re-deriving is contiguous by construction and would hide an
+// overrun (a scene whose authored duration pushes it past the next scene / the tail, like
+// F-002's old Beat6 = `TOTAL - from`). Raw durations let validateTiling actually catch it.
 const sorted = [...order].sort((a, b) => a.from - b.from);
-const ranges = sorted.map((s, i) => ({
-  from: s.from,
-  duration: (i + 1 < sorted.length ? sorted[i + 1].from : vo.total) - s.from,
-}));
+const ranges = sorted.map((s) => ({ from: s.from, duration: s.duration }));
 
 const r = validateTiling(ranges, vo.total);
 if (!r.ok) {
