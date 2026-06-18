@@ -179,6 +179,24 @@ export function captionMatchRatio(ocrText, expectedWords) {
   return found / exp.length;
 }
 
+// Caption fade-in length (frames) — opacity ramps [start, start+CAPTION_FADE] in
+// lib/Captions.tsx. Sample AFTER it so OCR reads the fully-opaque word, not a ghost.
+export const CAPTION_FADE = 3;
+
+// captionSamplePlan — turn the displayed caption TOKENS into one OCR sample per token
+// (NOT one frame for the whole speech region matched to every word — that scored ~1/N
+// on a perfectly legible word-by-word render). Each sample lands in the token's stable
+// display window (past the fade-in, before its end) and carries only its own text.
+// `tokens` are the merged display tokens (lib/captions-core buildTokens): {display,start,end}.
+export function captionSamplePlan(tokens) {
+  if (!Array.isArray(tokens)) return [];
+  return tokens.map((t) => {
+    const len = t.end - t.start;
+    const frame = Math.min(t.end - 1, t.start + Math.max(CAPTION_FADE + 1, Math.floor(len / 2)));
+    return { frame, display: t.display };
+  });
+}
+
 // Pure decision: given measured per-region match ratios, return a finding (warning)
 // or null. Warning, not blocker — OCR is fuzzy and must not false-fail a clean render.
 export function assessCaptionLegibility(ratios, c = { CAPTION_MATCH_MIN }) {
