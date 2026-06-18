@@ -3,6 +3,13 @@
 > Input package for the Fathom Remotion project. Not render-ready code — hand `05-remotion-prompt.md` to the Remotion skills. **This package includes a real Kokoro voiceover (`vo.wav`) and its timing — a render input.**
 
 - **Hook:** "Cleopatra is closer to YOU than to the Pyramids." · **Runtime:** 31s (930f @30fps · 1080×1920, from `vo-timing.json`) · **Voice:** Kokoro `am_michael` · **Reviewer score:** 93/100
+- **Publish packaging (2026-06-18, hooks-lab):** Title → `Cleopatra lived closer to YOU than to the Pyramids` · Thumbnail → `thumbnail.png` (the `hook-f001-you` first-frame card; sourced text only) · alt framings rendered in `render/out/hooks-lab/` (`-moon`, `-number`). See `docs/superpowers/specs/2026-06-18-hooks-lab.md`.
+- **REPAINT v2 (2026-06-18):** `final-v2.mp4` — full-body visual repaint (warm gold brand spine, silhouettes, accent-keyword type, scale-honest horizontal payoff timeline). Same frozen VO/timing/audio/captions. -14.52 LUFS / -1.03 dBTP. Code: `render/src/F-001-v2/` on `render/src/v2kit/`. **`final.mp4` (original) is kept for A/B — compare and finalize one.**
+- **v3 directions (2026-06-18, research-grounded):** three more styles on `render/src/v3kit/` (shared content + frozen contracts):
+  - `final-v3-1.mp4` — CAPTION-FORWARD (near-black, phrase-accumulating big captions, key word highlighted). Intentionally dark (mean luma <35 floor; bright type on black).
+  - `final-v3-2.mp4` — EDITORIAL INFOGRAPHIC (slate ground, Anton+Inter hierarchy, bordered stat cards, flat bars, section tags).
+  - `final-v3-3.mp4` — MOTION GRAPHICS (cinematic dark, scale+blur transitions, glow pulses, light streaks). Intentionally dark.
+  - All 930f, ~-14.5 LUFS / TP ≤ -1, loop seam RMSE <0.02. Compare against `final.mp4`/`final-v2.mp4` and finalize one.
 - **Status:** scripted + VO generated (v4 — not yet rendered) · **AI disclosure:** YES (synthetic voice)
 
 > **v4 (VO-driven):** the channel default is now a Kokoro voiceover that drives the timing. The narration was synthesized locally (free, offline), and its integer-frame timing set `durationInFrames=930`, the per-beat frame map, the word-by-word caption frames, and the music-ducking envelope. v4 keeps v3's vertical-timeline design and adds the design-§5 denser visuals (date ticks + era labels, a shared-baseline comparison, a brighter rest-state pyramid). Audio model flipped: **VO is the lead; the music bed ducks under it.**

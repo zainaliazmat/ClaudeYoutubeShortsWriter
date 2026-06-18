@@ -2,6 +2,12 @@
 
 Faceless **Fathom** YouTube Shorts channel. Videos are written as frame-timed scripts and rendered with **Remotion** (React → MP4). Active niche: **Facts / Kinetic Typography** (text + motion only — no footage). See `content/NICHES.md` and `YOUTUBE_SHORTS_RESEARCH_REPORT.md`.
 
+> **Styles program (phased, planned):** the `remotion-style-selector` skill is the niche style +
+> determinism reference for evolving toward living motion graphics. Phased build: D3 → Lottie →
+> GSAP (Three.js = exploration, not committed). Until a style ships, every video stays
+> `kinetic-typography`; the niche line above flips only after a new style ships and shows lift. Spec:
+> `docs/superpowers/specs/2026-06-19-remotion-style-selector-design.md`.
+
 ## The `/short` factory (topic → published-ready `final.mp4`)
 
 `/short [topic]` runs an end-to-end agentic flow that produces a **rendered, mastered, QA-passed video** plus its self-contained spec folder under `output/F-NNN-<slug>/`: a Kokoro **voiceover** (`vo.wav` + `vo-timing.json`) + script + asset/audio specs + a composition prompt + a QA scorecard, **then codegens per-video Remotion `.tsx`, renders it, masters the audio, and loops render→QA→fix to a quality bar**. The renderer lives in `render/` (monorepo — see "The renderer" below). The pipeline DOES generate `.tsx` (via the `remotion-codegen` skill on the shared `render/src/lib/`), DOES render + master locally, but does NOT download music/SFX binaries (a documented human step) or upload (a human action).
