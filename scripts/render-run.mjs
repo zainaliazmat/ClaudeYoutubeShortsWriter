@@ -2,8 +2,9 @@
 // render-run.mjs <output/F-NNN-slug> [--timeout-sec N] [--keep-out]
 //
 // One command: run folder -> validated -> assets gated -> public seeded ->
-// remotion render -> two-pass loudnorm master -> output/F-NNN/final.mp4
-// verified to -14 LUFS / <= -1 dBTP.
+// remotion render -> master (default: linear gain + true-peak limiter, which preserves
+// LRA on voice-led shorts; FATHOM_MASTER=loudnorm / --master loudnorm for the old two-pass
+// loudnorm) -> output/F-NNN/final.mp4 verified to -14 LUFS / <= -1 dBTP.
 //
 // Security (audit #9/#17): id is validated against ^F-\d{3}-[a-z0-9-]+$, asset
 // basenames are basename-only + charset-checked, every external process is spawned
@@ -19,6 +20,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { publicDirForRun, publicRunsRoot, staleRunDirs } from "./render-paths.mjs";
 import { assertSchemaVersion } from "./schema.mjs";
+import { resolveMasterMode, linearGainDb, limiterAf } from "./master.mjs";
 
 const execFileP = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,6 +59,13 @@ const LUFS_TARGET = -14;
 const LUFS_TOL = 1.0; // PASS if |I - (-14)| <= 1
 const TP_CEIL = -1.0; // PASS if TP <= -1 (a hair over, e.g. -0.7, is fine — no clip)
 const DEFAULT_TIMEOUT_SEC = 600;
+// Limiter chain (default master): aim a touch hot of the -15 floor so it lands ~-14.5
+// LUFS, well inside the -14±1 gate. The limiter ceiling is set below -1 dB so the
+// MEASURED true peak lands <= -1 dBTP (sample-peak limiting leaves inter-sample headroom).
+const MASTER_TARGET_I = -14.5;
+const LIMITER_CEIL_DB = -1.5;
+const MASTER_CORRECT_EPS = 0.2; // dB — land within this of MASTER_TARGET_I
+const MASTER_MAX_CORRECTIONS = 3; // bounded re-applies to converge (each is a fast af pass)
 
 const log = (m) => process.stdout.write(`[render-run] ${m}\n`);
 
@@ -211,24 +220,50 @@ export async function renderRun(runArg, opts = {}) {
     throw new GateError("remotion render produced no output file", { owner: "video" });
   log(`rendered: ${path.relative(ROOT, rawOut)}`);
 
-  // ---- two-pass loudnorm master ----
-  log("master pass 1: measure");
+  // ---- master ----
+  const mode = resolveMasterMode(opts.master, process.env);
+  log(`master pass 1: measure (mode=${mode})`);
   const m1 = await ffmpegMeasure(rawOut);
   const finalOut = path.join(runDir, "final.mp4");
   log(
     `measured I=${m1.input_i} TP=${m1.input_tp} LRA=${m1.input_lra} thresh=${m1.input_thresh} offset=${m1.target_offset}`,
   );
-  log("master pass 2: apply -> final.mp4");
-  await execFileP("ffmpeg", [
+
+  // -af apply, holding the video stream + AAC settings constant across both chains.
+  const applyAf = (af) => execFileP("ffmpeg", [
     "-y",
     "-i", rawOut,
     "-c:v", "copy",
-    "-af",
-    `loudnorm=I=${LUFS_TARGET}:TP=${TP_CEIL}:LRA=11:measured_I=${m1.input_i}:measured_TP=${m1.input_tp}:measured_LRA=${m1.input_lra}:measured_thresh=${m1.input_thresh}:offset=${m1.target_offset}:linear=false`,
+    "-af", af,
     "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
     "-movflags", "+faststart",
     finalOut,
   ]);
+
+  if (mode === "loudnorm") {
+    // Original two-pass loudnorm (dynamic, linear=false). Behind FATHOM_MASTER=loudnorm —
+    // its time-varying gain crushes a voice-led short's LRA, so it is no longer the default.
+    log("master pass 2: loudnorm apply -> final.mp4");
+    await applyAf(`loudnorm=I=${LUFS_TARGET}:TP=${TP_CEIL}:LRA=11:measured_I=${m1.input_i}:measured_TP=${m1.input_tp}:measured_LRA=${m1.input_lra}:measured_thresh=${m1.input_thresh}:offset=${m1.target_offset}:linear=false`);
+  } else {
+    // DEFAULT: one LINEAR makeup gain to MASTER_TARGET_I, then a true-peak limiter. The
+    // linear gain preserves the pre-master loudness range; the limiter only tames isolated
+    // transients. The limiter pulls loudness down a touch, so measure the result and apply
+    // one residual gain correction to land on target.
+    let gain = linearGainDb(parseFloat(m1.input_i), MASTER_TARGET_I);
+    log(`master pass 2: limiter apply (gain ${gain} dB, ceil ${LIMITER_CEIL_DB} dBTP) -> final.mp4`);
+    await applyAf(limiterAf(gain, LIMITER_CEIL_DB));
+    // The limiter pulls loudness below the linear target (it clamps transients), and each
+    // correction is itself slightly limited, so converge with a few bounded re-applies
+    // (each from the raw premaster — no compounding) until we land on target.
+    for (let i = 0; i < MASTER_MAX_CORRECTIONS; i++) {
+      const residual = MASTER_TARGET_I - parseFloat((await ffmpegMeasure(finalOut)).input_i);
+      if (Math.abs(residual) <= MASTER_CORRECT_EPS) break;
+      gain = Math.round((gain + residual) * 100) / 100;
+      log(`master correct: residual ${residual.toFixed(2)} dB -> regain ${gain} dB, re-apply`);
+      await applyAf(limiterAf(gain, LIMITER_CEIL_DB));
+    }
+  }
 
   // ---- verify gate ----
   log("master verify");
@@ -264,12 +299,14 @@ if (isMain) {
   const args = process.argv.slice(2);
   const runArg = args.find((a) => !a.startsWith("--"));
   const tIdx = args.indexOf("--timeout-sec");
+  const mIdx = args.indexOf("--master");
   const opts = {
     timeoutSec: tIdx !== -1 ? parseInt(args[tIdx + 1], 10) : DEFAULT_TIMEOUT_SEC,
     keepOut: args.includes("--keep-out"),
+    master: mIdx !== -1 ? args[mIdx + 1] : undefined, // limiter (default) | loudnorm
   };
   if (!runArg) {
-    process.stderr.write("usage: render-run.mjs <output/F-NNN-slug> [--timeout-sec N] [--keep-out]\n");
+    process.stderr.write("usage: render-run.mjs <output/F-NNN-slug> [--timeout-sec N] [--keep-out] [--master limiter|loudnorm]\n");
     process.exit(2);
   }
   renderRun(runArg, opts)
