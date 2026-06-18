@@ -9,5 +9,5 @@ __pycache__/
 # The spec package (00..08 .md, vo.wav, vo-timing.json, assets/) is the source of truth.
 # Covers final/-best/-vN/-v3-N takes and any other mp4 under a run folder.
 output/**/*.mp4
-output/**/thumbnail.png
+output/**/*.png
 render/out/
