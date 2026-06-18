@@ -16,7 +16,8 @@ import fs from "node:fs";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import {
-  captionMatchRatio, assessCaptionLegibility, assessCutCadence, assessCutCorrespondence,
+  captionMatchRatio, assessCaptionLegibility, captionSamplePlan,
+  assessCutCadence, assessCutCorrespondence,
 } from "./qa-assess.mjs";
 
 const execFileP = promisify(execFile);
@@ -172,34 +173,47 @@ export async function cutCorrespondenceProbe(file, scenesPath, fps = 30) {
 }
 
 // (d) OCR one frame at timeS -> recognized text. Requires tesseract; caller self-skips.
+// Captions are LIGHT type on a DARK kinetic-typography background, large + scattered —
+// raw tesseract returns empty/garbage on it. Preprocess for OCR: greyscale, NEGATE
+// (dark-on-light is what tesseract expects), lift contrast, upscale for the small caption
+// glyphs; --psm 11 (sparse text) reads scattered words. Validated: this turns whole frames
+// that OCR'd to "" into clean reads (e.g. F-001 "1969").
 export async function ocrFrameText(file, timeS) {
   const png = path.join(os.tmpdir(), `fathom-ocr-${process.pid}-${Math.round(timeS * 1000)}.png`);
   try {
-    await execFileP("ffmpeg", ["-y", "-ss", String(timeS), "-i", file, "-frames:v", "1", png]);
-    // tesseract <img> stdout -> text on stdout
-    const { stdout } = await execFileP("tesseract", [png, "stdout"]);
+    await execFileP("ffmpeg", ["-y", "-ss", String(timeS), "-i", file, "-frames:v", "1",
+      "-vf", "format=gray,negate,eq=contrast=1.6,scale=iw*1.5:ih*1.5", png]);
+    // tesseract <img> stdout -> text on stdout; PSM 11 = sparse text anywhere on the page
+    const { stdout } = await execFileP("tesseract", [png, "stdout", "--psm", "11"]);
     return stdout;
   } finally {
     fs.rmSync(png, { force: true });
   }
 }
 
-// (d) caption legibility: sample one frame mid each speech region, OCR it, compare to
-// the words that fall in that region. Returns per-region ratios + a finding (or null).
-// Self-skips (ratios=[]) when tesseract is absent — keeps the suite green everywhere.
+// (d) caption legibility: OCR ONE frame per displayed caption TOKEN (not one frame for the
+// whole speech region matched to every word — that scored ~1/N ≈ 6% on a perfectly legible
+// word-by-word render). Tokens come from the render's single source of truth (captions-core
+// buildTokens); captionSamplePlan picks a stable interior frame per token. Returns per-token
+// ratios + a finding. Self-skips (ratios=[]) when tesseract is absent — suite stays green.
 export async function captionLegibilityProbe(file, vo, fps = 30) {
   if (!(await hasBin("tesseract"))) return { ratios: [], finding: null, skipped: true };
-  const regions = vo.speech_regions || [];
   const words = vo.words || [];
+  if (words.length === 0) return { ratios: [], finding: null, skipped: true };
+  // The on-screen text is the MERGED display tokens, not the raw vo words. Use the render
+  // lib's buildTokens so the probe matches exactly what's rendered. Dynamic import: only the
+  // real probe run (node --experimental-strip-types) reaches here; npm test self-skips above.
+  let tokens;
+  try {
+    const { buildTokens } = await import("../render/src/lib/captions-core.ts");
+    tokens = buildTokens(words, vo.captionOverrides || {});
+  } catch {
+    tokens = words; // graceful fallback: treat each raw word as its own token
+  }
   const ratios = [];
-  for (const r of regions) {
-    const midFrame = Math.round((r.start + r.end) / 2);
-    const expected = words
-      .filter((w) => w.start != null && w.start >= r.start && w.start <= r.end)
-      .map((w) => w.display || w.spoken || "");
-    if (expected.length === 0) continue;
-    const text = await ocrFrameText(file, midFrame / fps);
-    ratios.push(captionMatchRatio(text, expected));
+  for (const s of captionSamplePlan(tokens)) {
+    const text = await ocrFrameText(file, s.frame / fps);
+    ratios.push(captionMatchRatio(text, [s.display]));
   }
   return { ratios, finding: assessCaptionLegibility(ratios), skipped: false };
 }

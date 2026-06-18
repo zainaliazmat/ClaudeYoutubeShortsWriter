@@ -92,12 +92,16 @@ test("FIX: a lit-but-FLAT frame (bright, no contrast) fails — de-games Cat-9",
   // bright flat frame would otherwise score 100/Cat9 100 and PASS:
   assert.equal(passBar({ blockerCount: blockers, score: scoreFromFindings(f), cat9: cat9FromLuma(120) }), false);
 });
-test("FIX: collapsed loudness range (LRA) is flagged as a warning on master", () => {
+test("FIX: collapsed loudness range (LRA) is flagged as a warning owned by the mix stage", () => {
   const f = assessMetrics({ ...CLEAN, LRA: 3 });
   const lra = f.find((x) => /loudness range|dynamics/.test(x.defect));
   assert.ok(lra, "expected an LRA/dynamics warning");
   assert.equal(lra.blocker, false);
-  assert.equal(lra.owner, "video (master)");
+  // The remedy is upstream (mix/assembly), NOT a master flag: linear=true is
+  // byte-identical here because the pre-master mix is quiet + peaky.
+  assert.equal(lra.owner, "video (mix)");
+  assert.doesNotMatch(lra.fix, /linear=true/, "fix must not point back at the master flag");
+  assert.match(lra.fix, /SFX|body|near-linear/i, "fix must describe the upstream mix remedy");
 });
 test("FIX: a bad/absent ducking envelope is flagged (owner voice)", () => {
   const f = assessMetrics({ ...CLEAN, duckingEnvelopeOk: false });

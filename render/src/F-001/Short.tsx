@@ -72,7 +72,7 @@ export const Short: React.FC<ShortProps> = ({ audio }) => {
       <Sequence from={SCENES.beat5.from} durationInFrames={SCENES.beat5.duration}>
         <Beat5 />
       </Sequence>
-      <Sequence from={SCENES.beat6.from} durationInFrames={TOTAL - SCENES.beat6.from}>
+      <Sequence from={SCENES.beat6.from} durationInFrames={SCENES.beat6.duration}>
         <Beat6 />
       </Sequence>
       <Sequence

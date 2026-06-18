@@ -10,11 +10,27 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { validateTiling } from "../render/src/lib/tiling.ts";
 import { gradientLuma } from "../render/src/lib/safeArea.ts";
+import { rawSceneRanges, auditSceneDurations } from "./scene-tiling.mjs";
 import { checkSchemaVersion } from "./schema.mjs";
 import { BG_STOP_LUMA_MIN } from "./quality-floors.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, "..");
+
+// Every .tsx under a scene dir (recurses into scenes/), so the scene-duration audit
+// sees every Sequence regardless of which file authored it.
+function listTsx(dir) {
+  const out = [];
+  const walk = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".tsx")) out.push(p);
+    }
+  };
+  if (fs.existsSync(dir)) walk(dir);
+  return out;
+}
 // gradient-stop avg below this is clearly near-black (F-001's legit 31.6 passes;
 // depth layers lift the render). Single source: scripts/quality-floors.mjs.
 const NEAR_BLACK_LUMA = BG_STOP_LUMA_MIN;
@@ -56,15 +72,14 @@ export function precheck(runArg) {
     const scSchema = checkSchemaVersion("scenes.json", scenesObj.schemaVersion);
     add("scenes-schema", scSchema.ok, "video", scSchema.message, "re-run remotion-codegen to emit schemaVersion");
 
-    const order = scenesObj.order || [];
-    const sorted = [...order].sort((a, b) => a.from - b.from);
-    const ranges = sorted.map((s, i) => ({
-      from: s.from,
-      duration: (i + 1 < sorted.length ? sorted[i + 1].from : vo.total) - s.from,
-    }));
+    // Validate the RAW authored durations from scenes.json — NOT durations re-derived
+    // from consecutive `from`s (those are contiguous by construction, so an overrun like
+    // F-002's old Beat6 = `TOTAL - from` could never surface). With raw durations,
+    // validateTiling's overlap / last-frame checks fire on a real overrun before render.
+    const ranges = rawSceneRanges(scenesObj);
     const t = validateTiling(ranges, vo.total);
     add("tiling", t.ok, "video", t.ok ? `${ranges.length} scenes tile [0,${vo.total}]` : t.errors.join("; "),
-      "fix scene boundaries in scenes.json");
+      "fix scene from/duration in scenes.json (each scene's authored duration must tile [0,total])");
   } else {
     add("tiling", false, "video", "missing scenes.json or vo-timing.json", "codegen must emit scenes.json");
   }
@@ -74,6 +89,16 @@ export function precheck(runArg) {
   add("duration-source", !durConst, "video",
     durConst ? "found a DURATION const — must derive from calculateMetadata(vo.total)" : "duration via calculateMetadata",
     "remove DURATION const; calculateMetadata reads vo-timing.json total");
+
+  // --- scene-duration source: every Sequence's durationInFrames must trace to scenes.json
+  // (SCENES.<name>.duration). A duration computed from TOTAL (F-002's `TOTAL - from` seam
+  // bug) or a numeric literal is NOT traceable — fail before render. Scan every .tsx. ---
+  const tsxFiles = listTsx(srcDir);
+  const tsxTxt = tsxFiles.map((f) => fs.readFileSync(f, "utf8")).join("\n");
+  const audit = auditSceneDurations(tsxTxt);
+  add("scene-duration-source", audit.ok, "video",
+    audit.ok ? "every scene duration traces to scenes.json" : audit.offenders.map((o) => `${o.expr} — ${o.reason}`).join("; "),
+    "author each scene's duration in scenes.json; Sequences use SCENES.<name>.duration");
 
   // --- near-black background estimate (cheap; render-qa is the pixel backstop) ---
   const top = /bgTop:\s*"(#[0-9a-fA-F]{6})"/.exec(dataTxt);

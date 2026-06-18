@@ -122,12 +122,15 @@ export function assessMetrics(m, c = THRESH) {
       "video", "render hero type + depth layers (lib Background + Captions); never a flat fill",
       "a bright void still fails — Cat-9 must not pass on brightness alone");
 
-  // B1. dynamics collapse: a correctly-loud master can still be over-compressed
-  // (loudnorm linear=false squashes LRA). Warn so it's caught before publish.
+  // B1. dynamics collapse: a correctly-loud master can still read as over-compressed.
+  // Proven NOT a master-flag problem — linear=true is byte-identical here because the
+  // pre-master mix is quiet + peaky (isolated SFX transients force loudnorm into dynamic
+  // mode for the +6 dB it needs). The fix is upstream in the mix. Warn before publish.
   if (Number.isFinite(m.LRA) && m.LRA < c.LRA_MIN)
     warn("narrow loudness range",
       `LRA ${m.LRA} (< ${c.LRA_MIN}) — dynamics collapsed (loudnorm linear=false?)`,
-      "video (master)", "master with linear=true, or skip mastering an already-on-target mix",
+      "video (mix)",
+      "tame SFX transient peaks (lower/limit the SFX bus) and raise the VO/bed body so the master needs only a small near-linear gain",
       "flat dynamics read as lifeless even at -14 LUFS");
 
   // B2. ducking: cannot be measured from the inseparable final mix, so verify the
@@ -174,6 +177,24 @@ export function captionMatchRatio(ocrText, expectedWords) {
   const hay = ` ${normalizeCaptionText(ocrText)} `;
   const found = exp.filter((w) => hay.includes(` ${w} `)).length;
   return found / exp.length;
+}
+
+// Caption fade-in length (frames) — opacity ramps [start, start+CAPTION_FADE] in
+// lib/Captions.tsx. Sample AFTER it so OCR reads the fully-opaque word, not a ghost.
+export const CAPTION_FADE = 3;
+
+// captionSamplePlan — turn the displayed caption TOKENS into one OCR sample per token
+// (NOT one frame for the whole speech region matched to every word — that scored ~1/N
+// on a perfectly legible word-by-word render). Each sample lands in the token's stable
+// display window (past the fade-in, before its end) and carries only its own text.
+// `tokens` are the merged display tokens (lib/captions-core buildTokens): {display,start,end}.
+export function captionSamplePlan(tokens) {
+  if (!Array.isArray(tokens)) return [];
+  return tokens.map((t) => {
+    const len = t.end - t.start;
+    const frame = Math.min(t.end - 1, t.start + Math.max(CAPTION_FADE + 1, Math.floor(len / 2)));
+    return { frame, display: t.display };
+  });
 }
 
 // Pure decision: given measured per-region match ratios, return a finding (warning)
