@@ -33,6 +33,12 @@ layout/scene logic only — importing every proven primitive from the shared lib
 - `safeArea.ts` — `WIDTH, HEIGHT, FPS, SAFE_TOP, SAFE_BOTTOM, SAFE_INSET_X, BANDS, QUALITY_FLOORS, hexLuma, gradientLuma`.
 - `tiling.ts` — `validateTiling(ranges, total)` (the codegen gate runs this).
 - `captions-core.ts` — `buildTokens, isNumeric, tokenAt` (pure; used by Captions and tests).
+- `dataviz/` — the **D3 composition-style primitive** (`d3-scale` + `d3-shape`, scoped). Pure,
+  frame-driven charts + helpers: `GrowthCurve`, `BarChart`, `Distribution`, `scales` (linear/band/time),
+  `paths` (revealPoints + line/area path strings), `scaleHonest` (`lengthFor`/`isScaleHonest` — the
+  scale-honesty floor, machine-checked), `colors` (`categoricalRamp` from the accent hue). Import via
+  `render/src/lib/dataviz` for an `effective_style: d3` video. Everything is a pure function of frame;
+  animate by interpolating a reveal cutoff, **never** `d3.transition()` (forbidden + not installed).
 
 ## Output (write under `render/src/F-NNN/` — `NNN` from the run id)
 1. `vo-timing.json` — **copy** the run's file here (the composition reads `total`/`fps`/`words`/`envelope` from it).
@@ -57,17 +63,34 @@ These are non-negotiable; render-qa is the pixel backstop, but codegen must not 
 - **Hero scale:** hero number/payoff type ≥ `QUALITY_FLOORS.heroMinPx` (~300px) Anton.
 - **Frame fill:** lay out the FULL safe area in upper/center/lower bands (`BANDS`); no beat leaves > ~45% dead space. Use persistent furniture (timeline/motif) to fill.
 - **Count-up:** `countUp` reveals ≤ `QUALITY_FLOORS.countUpMaxFrames` (~36f) ease-out then hold; values clamped ≥ 0 (lib already clamps).
-- **Data-viz scale-honesty:** compute geometry FROM the verified values (px-per-unit), never hand-pick pixel lengths; the length ratio must equal the data ratio. Label any deliberate exaggeration.
+- **Data-viz scale-honesty:** compute geometry FROM the verified values (px-per-unit), never hand-pick pixel lengths; the length ratio must equal the data ratio. Label any deliberate exaggeration. **For an `effective_style: d3` video this is by construction** — feed the chart-spec `points[].value` straight into `lib/dataviz` (`lengthFor`/the scale wrappers); never reposition by hand.
 - **Captions:** clear the bottom gutter (`QUALITY_FLOORS.captionBottomGutterPx`) and the top; the lib component handles this.
 - **Loop seam (audit #4):** the last scene cross-dissolves back to the frame-0 composition AND the **persistent furniture must itself return to its frame-0 state at `total`** — an overlaid frozen Hook is not enough if the background/timeline underneath is still mid-animation. Pass **`loopSafe`** to `<Background>` (uses `loopSafeDrift`/`loopSafePulse` so the star drift + glow pulse land back at their frame-0 values), and drive any custom persistent layer (timeline progress, motif) with the same loop-safe primitives from `lib/motion`. Verify with the qa-probe seam check (state at `total` == state at 0).
+
+## d3 branch — `effective_style: d3` (read the chart-spec, halt-and-route if invalid)
+Read `effective_style` from `05-remotion-prompt.md` (match `^effective_style:\s*(d3|kinetic-typography)\s*$`;
+a **missing** line ⇒ `kinetic-typography`, the untouched default path). When `d3`:
+1. Parse the fenced ` ```json chart-spec ` block (`scripts/schema.mjs` registers it at v1).
+2. **Controlled-halt precondition gate** (mirror the pre-render asset gate). Validate the spec
+   (`validateChartSpec` in `schema.mjs`): an `archetype` of `curve|bars|distribution` and **≥3 sourced
+   numeric points** (each `points[]` has a numeric `value` + a `sourceRef`). If it fails, HALT — do NOT
+   silently swap to text — and print a routing message:
+   - `<3 sourced points` → **PROBLEM**/CAUSE + **FIX: re-run youtube-shorts-writer to source the dropped point** · owner `script`.
+   - bad/missing archetype or incomparable units → **FIX: re-run remotion-prompt-generator to reclassify (or to kinetic-typography)** · owner `video`.
+3. Import the charts from `render/src/lib/dataviz`; wire `points[].value` straight in (scale-honest by
+   construction). Defense-in-depth: assert `render/src/lib/dataviz` exists when you see `effective_style: d3`
+   — if it's absent, emit the same controlled halt rather than degrading silently (closes the flag-flip race).
 
 ## Gate (run after writing — all must pass; this is the codegen exit)
 ```bash
 cd render
-npm run gate          # tsc (strict, noUnusedLocals) && eslint src  — MUST exit 0
-npm run test:lib      # the lib unit tests still pass
+npm run gate          # tsc (strict) && eslint src && the dataviz static determinism guard  — MUST exit 0
+npm run test:lib      # the lib unit tests still pass (glob 'src/lib/**/*.test.ts' covers lib/dataviz/__tests__)
 node --experimental-strip-types scripts/check-tiling.mjs F-NNN-slug   # scene ranges tile [0, total]
 ```
+> The render-hash determinism proof (`scripts/check-determinism.mjs`) is NOT part of this fast
+> pre-render gate — it needs a bundle + real renders, so it runs in the render-run/loop precheck for
+> any `effective_style: d3` video.
 - `tsc` + `eslint` must be clean (no hand edits after — fix the generator output, re-gate).
 - `check-tiling.mjs` reads `render/src/F-NNN/scenes.json` (the RAW authored `{from,duration}`) + `vo-timing.json` `total` and runs `validateTiling` (0-indexed, half-open, contiguous, tiles `[0, total]`). Authoring a scene's duration too long now surfaces here as an overlap / wrong-tail — it is no longer hidden by contiguous re-derivation.
 - Duration MUST come from `calculateMetadata` (grep the composition: no `durationInFrames={<number const>}` except the `=1` placeholder; no `DURATION` const in `data.ts`). No scene `<Sequence>` may set `durationInFrames` from `TOTAL` (`TOTAL - from`) — precheck's `scene-duration-source` audit fails it; use `SCENES.x.duration`.

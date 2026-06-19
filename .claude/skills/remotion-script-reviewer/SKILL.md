@@ -36,6 +36,15 @@ the script is prose rather than a structured template, infer these sections and 
 structure was loose (it's harder to implement). If `05` is not yet generated, score categories 1–8
 on the script and mark Category 9 as pending the composition spec.
 
+### 1.5. Validate the style decision (d3 branch)
+If `05-remotion-prompt.md` carries `effective_style: d3`, the decision must be earned, or it halts at
+codegen. Check: exactly one `^effective_style:\s*(d3|kinetic-typography)\s*$` line (two = flag; none =
+treated as `kinetic-typography`, fine); and a fenced ` ```json chart-spec ` block with
+`archetype ∈ {curve,bars,distribution}` and **≥3 points each carrying a numeric `value` AND a
+`sourceRef`** (field-presence, not prose). A `d3` decision with <3 sourced points or an incoherent
+chart-spec → **flag for revision** (reclassify in prompt-generator, or source points in the writer) —
+caught here inside the step-6 loop, not at render.
+
 ### 2. Run the frame-budget validator — never do this math by hand
 ```bash
 python3 ${CLAUDE_SKILL_DIR}/scripts/validate_frame_budget.py <path-to-script> 2>&1

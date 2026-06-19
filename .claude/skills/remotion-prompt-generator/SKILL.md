@@ -25,12 +25,50 @@ exact text · font family/weight/size · color hex · entrance + exit animation 
 - Captions: burned-in, word-by-word, **generated from `vo-timing.json` integer word frames** — each word's `[start,end]` frames come straight from the JSON (no Whisper, no hand-typed windows, no re-rounding from seconds); the caption shows the word's `display` string. **Merge consecutive words that share the same `display`** into ONE caption token spanning `[first.start, last.end]` — a number/abbrev expands to several spoken words (`2560`→"twenty-five sixty" = 2 words, `BC`→"B C" = 2, `2,500`→4) but must render as a single on-screen token, not flash repeatedly. Keep clear of bottom ~15% and the very top.
 - Audio (VO is the lead): layered `<Audio>` from `@remotion/media`. **`vo.wav` is the lead at volume ~0.9–1.0** (`staticFile('vo.wav')`). The **music bed DUCKS under it** via a frame-callback `volume` that reads the `vo-timing.json` `envelope` keyframes (base ~0.72 → ~0.22 across `speech_regions`, swelling on the payoff after the last region) — not a flat low gain, not a live sidechain. Accent SFX 0.5–0.7, reveal hit 0.9–1.0, at the frames named in `04-audio.md`. Reference files via `staticFile()` from `public/`. **Final render must be mastered to -14 LUFS / ≤ -1 dBTP** via the two-pass `loudnorm` post-step (see `04-audio.md` master target) — encode it as the last render instruction.
 
+## Style decision — `effective_style` + chart-spec (d3 branch)
+
+Classify the dominant fact shape and record ONE machine-greppable decision line in
+`05-remotion-prompt.md`:
+
+- **`effective_style: d3`** — only if the dominant fact is **≥3 sourced numeric points**
+  forming a trend / categories / distribution with comparable units (decision-map row 1).
+- **`effective_style: kinetic-typography`** — everything else (the default house style).
+
+The line MUST match `^effective_style:\s*(d3|kinetic-typography)\s*$` (lowercase, line-anchored,
+exactly one such line). A **missing** line is read downstream as `kinetic-typography` (fail-safe), so
+old prompts keep rendering unchanged — but always emit it explicitly for a new prompt.
+
+For `d3`, ALSO emit a fenced **chart-spec** JSON block (codegen imports `render/src/lib/dataviz/` and
+wires the chart straight from these verified values — scale-honest by construction; the reviewer
+validates it; `scripts/schema.mjs` registers the shape at v1):
+
+````
+```json chart-spec
+{ "schemaVersion": 1,
+  "archetype": "bars",                       // curve | bars | distribution
+  "points": [ {"label":"T. rex","value":66,"sourceRef":"01-verified-facts.md#L12"},
+              {"label":"Stegosaurus","value":150,"sourceRef":"01-verified-facts.md#L13"},
+              {"label":"You","value":0,"sourceRef":"01-verified-facts.md#L14"} ],
+  "domain": [0, 150], "range": [0, 460],
+  "axisLabels": {"x":"era","y":"million years ago"},
+  "transform": "linear",                      // linear | log (log MUST carry an axis label)
+  "growsAcrossBeats": [1,2] }
+```
+````
+
+Every point needs a `sourceRef` (the reviewer's "≥3 *sourced*" check is a field-presence check, not
+prose). If you can't get ≥3 sourced points, emit `effective_style: kinetic-typography` — do NOT emit a
+`d3` decision the codegen gate will have to halt on.
+
 ## `05-remotion-prompt.md` template
 ```markdown
 # F-NNN — Remotion Composition Prompt
 
 ## Use the Remotion official skills to build this composition.
 - Composition id: `F-NNN-<slug>` · 1080×1920 · 30fps · durationInFrames: <vo-timing.json total>
+
+effective_style: kinetic-typography
+<!-- if d3: set to `d3` and add the ```json chart-spec block (see "Style decision" above) -->
 
 ## Design tokens
 - Fonts: <from 03-assets> · Colors: <hex set + bg depth: gradient/glow> · Motion signature: <configs>

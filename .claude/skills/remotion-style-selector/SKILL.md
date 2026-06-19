@@ -68,9 +68,11 @@ canonical availability table in §5.
 
 - **kinetic-typography** *(available)* — the house style. Text + motion via `lib/motion.ts` springs,
   `lib/captions`, `lib/Background`. Pick by default. Determinism is already enforced by the lib.
-- **D3** *(planned — Phase 2)* — pure-SVG data-viz. Prompt: "compute scales/paths as pure functions
-  of `frame`; animate by interpolating the domain, not with transitions." Determinism: d3 *scales
-  and shape generators are pure* (safe); **forbid `d3.transition()` and `d3-timer`** (wall-clock).
+- **D3** *(available — `render/src/lib/dataviz`)* — pure-SVG data-viz (growth curve / bars /
+  distribution). Prompt: "compute scales/paths as pure functions of `frame`; animate by interpolating
+  the domain/reveal cutoff, not with transitions." Determinism: d3 *scales and shape generators are
+  pure* (safe); **`d3.transition()`/`d3-timer`/`d3-selection` are forbidden AND not installed** (scoped
+  to `d3-scale` + `d3-shape`); the static grep guard + render-hash check enforce it on every render.
 - **Lottie** *(planned)* — motion accents. Prompt: "use `@remotion/lottie`; drive the player by
   `frame`." Determinism: never autoplay; `seek`/`progress` from `frame`; wrap JSON load in
   `delayRender`/`continueRender` (§4).
@@ -116,7 +118,7 @@ the playbook or the decision map — reference this.
 | style | flag |
 |---|---|
 | `kinetic-typography` | available |
-| `d3` | planned |
+| `d3` | available |
 | `lottie` | planned |
 | `gsap` | planned |
 | `three` | exploration (not committed) |

@@ -162,6 +162,22 @@ a "d3 scale-dishonest / wrong-archetype" routing row to the Stage-attribution ta
 re-run prompt-generator / codegen), and updates the `remotion-codegen` shared-library + quality-floor
 sections to mention `lib/dataviz/`.
 
+## Extending this (DX-6 — the touch-points, so the next person doesn't reverse-engineer 5 edits)
+
+**Add a 4th archetype** (e.g. scatter):
+1. add the value to the chart-spec `archetype` enum (in `remotion-prompt-generator` SKILL + the
+   reviewer's check + `validateChartSpec` in `scripts/schema.mjs`);
+2. add `render/src/lib/dataviz/<Archetype>.tsx` (pure of frame) + its purity/scale-honesty unit test
+   in `render/src/lib/dataviz/__tests__/`;
+3. add it to the fixture composition so `check-determinism.mjs` covers it;
+4. add a decision-map row in `remotion-prompt-generator`.
+
+**Add the next STYLE** (e.g. Lottie — rule of three says extract a selector skill at this point):
+1. a parallel `effective_style` value + flip its flag in `remotion-style-selector` §5 **last**;
+2. its scoped deps + a static-grep allow/deny entry in `check-dataviz-static.mjs` (or a sibling guard);
+3. a `render/src/lib/<style>/` primitive + its determinism layers (unit + render-hash + grep);
+4. teach `remotion-codegen` to consume it (with a controlled-halt gate) BEFORE flipping the flag.
+
 ## Out of scope
 
 - Lottie / GSAP / Three.js styles (later phases / exploration).
