@@ -247,6 +247,66 @@ class Lottie:
         return out_path
 
 
+def _scale_kf_times(node, scale_frame):
+    """Recursively scale the keyframe time `t` of every animated property
+    ({"a":1,"k":[...]}) anywhere in the dict tree — covers layer transforms (ks),
+    shape items (it), and trim/gradient properties alike."""
+    if isinstance(node, dict):
+        if node.get("a") == 1 and isinstance(node.get("k"), list):
+            for kf in node["k"]:
+                if isinstance(kf, dict) and "t" in kf:
+                    kf["t"] = scale_frame(kf["t"])
+        for v in node.values():
+            _scale_kf_times(v, scale_frame)
+    elif isinstance(node, list):
+        for v in node:
+            _scale_kf_times(v, scale_frame)
+
+
+def resample_fps(doc: dict, target_fps: int) -> dict:
+    """Rescale a built Lottie dict from its baked fr to target_fps, keeping wall-clock
+    duration. Scales doc op/ip, every layer ip/op, and every animated keyframe `t` by
+    target/source, rounding to integer frames. Mutates and returns `doc`."""
+    src_fps = doc.get("fr", target_fps)
+    if src_fps == target_fps:
+        return doc
+    k = target_fps / src_fps
+
+    def scale_frame(v):
+        return round(v * k)
+
+    doc["fr"] = target_fps
+    doc["op"] = scale_frame(doc.get("op", 0))
+    doc["ip"] = scale_frame(doc.get("ip", 0))
+    for layer in doc.get("layers", []):
+        layer["ip"] = scale_frame(layer.get("ip", 0))
+        layer["op"] = scale_frame(layer.get("op", doc["op"]))
+        _scale_kf_times(layer, scale_frame)  # one walker; covers ks + shapes + it
+    return doc
+
+
+def max_kf_time(doc: dict) -> int:
+    """Largest keyframe `t` anywhere in the doc — used to assert no sub-layer kept its
+    pre-resample (faster) timing."""
+    best = 0
+
+    def walk(node):
+        nonlocal best
+        if isinstance(node, dict):
+            if node.get("a") == 1 and isinstance(node.get("k"), list):
+                for kf in node["k"]:
+                    if isinstance(kf, dict) and isinstance(kf.get("t"), (int, float)):
+                        best = max(best, kf["t"])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(doc)
+    return best
+
+
 # --------------------------------------------------------------------------- #
 # Presets — readable recipes that double as worked examples.
 # --------------------------------------------------------------------------- #
@@ -440,6 +500,8 @@ def main(argv=None):
     p.add_argument("--size", type=int, default=0, help="canvas size px (0 = preset default)")
     p.add_argument("-o", "--out", default=None, help="output .json path")
     p.add_argument("--pretty", action="store_true", help="pretty-print (larger file)")
+    p.add_argument("--fps", type=int, default=None,
+                   help="resample to this frame rate (e.g. 30 for Fathom)")
     args = p.parse_args(argv)
 
     if args.preset == "list":
@@ -452,11 +514,17 @@ def main(argv=None):
     if args.size:
         kwargs["size"] = args.size
     anim = fn(**kwargs)
+    doc = anim.to_dict()
+    if args.fps is not None:
+        doc = resample_fps(doc, args.fps)
     out = args.out or f"{args.preset}.json"
-    anim.save(out, minify=not args.pretty)
-    d = anim.to_dict()
-    print(f"Wrote {out}  ({len(json.dumps(d))} bytes, {d['w']}x{d['h']}, "
-          f"{d['op']/d['fr']:.1f}s @ {d['fr']}fps, {len(d['layers'])} layers)")
+    with open(out, "w") as f:
+        if args.pretty:
+            json.dump(doc, f, indent=2)
+        else:
+            json.dump(doc, f, separators=(",", ":"))
+    print(f"Wrote {out}  ({doc['w']}x{doc['h']}, "
+          f"{doc['op']/doc['fr']:.1f}s @ {doc['fr']}fps, {len(doc['layers'])} layers)")
     return 0
 
 
