@@ -26,6 +26,20 @@
 
 ---
 
+## Reconnaissance (verified against source — do not re-guess)
+
+These were confirmed by reading the actual files; tasks below depend on them.
+
+- **`lottie_gen.py` serialization point:** `main()` builds `anim = fn(**kwargs)` then calls **`anim.save(out, minify=...)`** (which internally calls `self.to_dict()`). There is **no** `--fps` flag yet. Task 2 replaces the save path with `to_dict()` → `resample_fps()` → `json.dump()`.
+- **`PRESETS` keys (exact CLI names):** `spinner, pulse, dots, check, cross, progress, heartbeat, bounce, fadein`. The success checkmark preset is **`check`** (the descriptive *filename* `success-check.json` is unrelated to the CLI key). `check` builds at `fps=60, duration_frames=45`, keyframes at frames `0,18,24,40` — all even, so 60→30 scales to clean integers (`0,9,12,20`, op→22).
+- **`check` preset keyframe shapes** the resampler must traverse: animated properties appear as `{"a":1,"k":[…]}` inside layer `ks` (transform `r`/`p`) **and** inside shape items (`trim`'s `e` end property). A single recursive walker that scales every `{"a":1,"k":[list]}` node's keyframe `t` covers all of them.
+- **qa-probe ffmpeg pattern (reuse this exactly):** its `ff()` helper runs ffmpeg and returns **`stdout + stderr` concatenated** (and on error `(e.stdout||"")+(e.stderr||"")`), then regexes `YAVG=`/`YMIN=`/`YMAX=` out of the combined string. `metadata=print:file=-` + `-f null -`. Task 9 MUST combine both streams — reading stderr alone misses the values.
+- **`safeArea.ts` exports (named):** `WIDTH=1080, HEIGHT=1920, FPS=30, SAFE_TOP=154, SAFE_BOTTOM=1632, SAFE_INSET_X=60` (+ `QUALITY_FLOORS`, `hexLuma`, `gradientLuma`). All used by name in Tasks 4/8/9.
+- **`check-determinism.mjs` arg contract:** takes an optional composition-id as `process.argv[2]` (default `dataviz-fixture`); renders frames 0/mid/last twice and SHA-compares. Confirmed.
+- **Determinism check has NO automated home today:** nothing invokes `check-determinism.mjs` (the dataviz one is manual/slow-lane despite the D3 spec's intent). Task 9b therefore CREATES a `make check-lottie` slow-lane target and wires the proof-of-life to it — we are not retrofitting the pre-existing dataviz gap here.
+
+---
+
 ## File Structure
 
 **New:**
@@ -44,6 +58,7 @@
 - `render/package.json` — add dep; extend `gate`; add `check:determinism:lottie` script.
 - `render/scripts/check-dataviz-static.mjs` — add `lib/lottie` to `SCAN_DIRS`.
 - `render/src/Root.tsx` — register the `lottie-fixture` composition.
+- `Makefile` — add a `check-lottie` slow-lane target (determinism + render).
 - `scripts/seed-public.sh` — copy `*.json` accents from the run's `assets/`.
 - `.claude/skills/asset-sourcing/SKILL.md`, `.claude/skills/remotion-prompt-generator/SKILL.md`, `.claude/skills/remotion-codegen/SKILL.md` — accent-layer wiring.
 
@@ -100,16 +115,33 @@ The presets bake `fr=60`; the channel renders at 30. Add a `--fps` flag that res
 **Interfaces:**
 - Produces: `python3 lottie_gen.py <preset> --color "#hex" --fps 30 -o out.json` emits a `.json` with top-level `"fr": 30` and integer keyframe times.
 
-- [ ] **Step 1: Add a `resample_fps` helper near the `Lottie` class**
+**Note on lossiness:** the presets bake keyframes as hard-coded 60fps frame integers, so resampling to 30 is **lossy** — `round()` can in principle collide adjacent keyframes for very tightly-spaced motion (Python banker's rounding: `round(0.5)==0`). The `check` preset's keyframes (`0,18,24,40`) all scale cleanly to integers with no collision, so it is safe; for future fast accents, prefer wide keyframe spacing or author the preset in seconds. Step 4 adds an assertion that catches the dangerous failure mode (a sub-layer left at 60fps timing while `op`/`fr` halve).
 
-Add this module-level function (after the `Lottie` class definition, before the presets):
+- [ ] **Step 1: Add the `resample_fps` helper (single recursive walker)**
+
+Add these module-level functions after the `Lottie` class definition, before the presets:
 
 ```python
+def _scale_kf_times(node, scale_frame):
+    """Recursively scale the keyframe time `t` of every animated property
+    ({"a":1,"k":[...]}) anywhere in the dict tree — covers layer transforms (ks),
+    shape items (it), and trim/gradient properties alike."""
+    if isinstance(node, dict):
+        if node.get("a") == 1 and isinstance(node.get("k"), list):
+            for kf in node["k"]:
+                if isinstance(kf, dict) and "t" in kf:
+                    kf["t"] = scale_frame(kf["t"])
+        for v in node.values():
+            _scale_kf_times(v, scale_frame)
+    elif isinstance(node, list):
+        for v in node:
+            _scale_kf_times(v, scale_frame)
+
+
 def resample_fps(doc: dict, target_fps: int) -> dict:
     """Rescale a built Lottie dict from its baked fr to target_fps, keeping wall-clock
-    duration. Scales op/ip and every keyframe time `t` by target/source, rounding to
-    the nearest integer frame (sub-frame rounding is acceptable for short accents and
-    keeps loop periods integer). Mutates and returns `doc`."""
+    duration. Scales doc op/ip, every layer ip/op, and every animated keyframe `t` by
+    target/source, rounding to integer frames. Mutates and returns `doc`."""
     src_fps = doc.get("fr", target_fps)
     if src_fps == target_fps:
         return doc
@@ -124,69 +156,94 @@ def resample_fps(doc: dict, target_fps: int) -> dict:
     for layer in doc.get("layers", []):
         layer["ip"] = scale_frame(layer.get("ip", 0))
         layer["op"] = scale_frame(layer.get("op", doc["op"]))
-        _scale_keyframes(layer.get("ks", {}), scale_frame)
-        for shp in layer.get("shapes", []):
-            _scale_shape_keyframes(shp, scale_frame)
+        _scale_kf_times(layer, scale_frame)  # one walker; covers ks + shapes + it
     return doc
 
 
-def _scale_keyframes(node, scale_frame):
-    """Walk a transform/property dict; for any animated property ({"a":1,"k":[...keyframes]})
-    scale each keyframe's `t`."""
-    if isinstance(node, dict):
-        if node.get("a") == 1 and isinstance(node.get("k"), list):
-            for kf in node["k"]:
-                if isinstance(kf, dict) and "t" in kf:
-                    kf["t"] = scale_frame(kf["t"])
-        for v in node.values():
-            _scale_keyframes(v, scale_frame)
-    elif isinstance(node, list):
-        for v in node:
-            _scale_keyframes(v, scale_frame)
+def max_kf_time(doc: dict) -> int:
+    """Largest keyframe `t` anywhere in the doc — used to assert no sub-layer kept its
+    pre-resample (faster) timing."""
+    best = 0
 
+    def walk(node):
+        nonlocal best
+        if isinstance(node, dict):
+            if node.get("a") == 1 and isinstance(node.get("k"), list):
+                for kf in node["k"]:
+                    if isinstance(kf, dict) and isinstance(kf.get("t"), (int, float)):
+                        best = max(best, kf["t"])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
 
-def _scale_shape_keyframes(shape, scale_frame):
-    _scale_keyframes(shape, scale_frame)
-    for sub in shape.get("it", []) if isinstance(shape, dict) else []:
-        _scale_shape_keyframes(sub, scale_frame)
+    walk(doc)
+    return best
 ```
 
-- [ ] **Step 2: Add the `--fps` CLI argument and apply it**
+- [ ] **Step 2: Add the `--fps` CLI argument and rewrite the save path**
 
-In `main()`, after the existing `add_argument` calls (near `p.add_argument("preset", ...)`), add:
+In `main()`, after `p.add_argument("--pretty", ...)`, add:
 
 ```python
     p.add_argument("--fps", type=int, default=None,
-                   help="resample the animation to this frame rate (e.g. 30 for Fathom)")
+                   help="resample to this frame rate (e.g. 30 for Fathom)")
 ```
 
-Then, where the preset dict is built for saving (after `fn(...)` produces the `Lottie` and before `.save()` / `to_dict()`), apply the resample. Locate the block that calls `fn(color=..., size=...)` and serializes; change it to:
+Then replace the serialization block (the lines `anim = fn(**kwargs)` … through the final `print(...)` and `return 0`) with:
 
 ```python
-    anim = fn(color=args.color, size=args.size)
+    anim = fn(**kwargs)
     doc = anim.to_dict()
     if args.fps is not None:
         doc = resample_fps(doc, args.fps)
     out = args.out or f"{args.preset}.json"
     with open(out, "w") as f:
-        json.dump(doc, f, separators=(",", ":"))
-    d = doc
-    print(f"wrote {out} ({d['w']}x{d['h']}, {d['op']/d['fr']:.1f}s @ {d['fr']}fps, {len(d['layers'])} layers)")
+        if args.pretty:
+            json.dump(doc, f, indent=2)
+        else:
+            json.dump(doc, f, separators=(",", ":"))
+    print(f"Wrote {out}  ({doc['w']}x{doc['h']}, "
+          f"{doc['op']/doc['fr']:.1f}s @ {doc['fr']}fps, {len(doc['layers'])} layers)")
+    return 0
 ```
 
-(If `main()` already serializes via `anim.save()`, replace that path with the `to_dict()` + `resample_fps` + `json.dump` above so the resample is applied.)
-
-- [ ] **Step 3: Generate a 30fps check and verify `fr`**
+- [ ] **Step 3: Generate a 30fps check and verify `fr` + integer keyframes**
 
 Run:
 ```bash
 cd /home/zain-ali/Documents/ScriptWriter
 python3 .claude/skills/lottie-master/scripts/lottie_gen.py check --color "#46C6FF" --size 320 --fps 30 -o /tmp/check30.json
-python3 -c "import json;d=json.load(open('/tmp/check30.json'));print('fr',d['fr'],'op',d['op'],'integer_kf', all(isinstance(kf.get('t',0),int) for L in d['layers'] for prop in [L['ks']] for v in prop.values() if isinstance(v,dict) and v.get('a')==1 for kf in v['k']))"
+python3 -c "
+import json
+from importlib.util import spec_from_file_location, module_from_spec
+s=spec_from_file_location('lg','.claude/skills/lottie-master/scripts/lottie_gen.py'); m=module_from_spec(s); s.loader.exec_module(m)
+d=json.load(open('/tmp/check30.json'))
+ints=all(isinstance(kf.get('t',0),int) for L in d['layers'] for v in L['ks'].values() if isinstance(v,dict) and v.get('a')==1 for kf in v['k'])
+print('fr',d['fr'],'op',d['op'],'integer_kf',ints)
+"
 ```
-Expected: `fr 30 op 23 integer_kf True` (op may differ slightly; the key assertions are `fr 30` and `integer_kf True`).
+Expected: `fr 30 op 22 integer_kf True`.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Assert no sub-layer kept 60fps timing (the silent half-scale bug)**
+
+Run:
+```bash
+cd /home/zain-ali/Documents/ScriptWriter
+python3 -c "
+import json
+from importlib.util import spec_from_file_location, module_from_spec
+s=spec_from_file_location('lg','.claude/skills/lottie-master/scripts/lottie_gen.py'); m=module_from_spec(s); s.loader.exec_module(m)
+d=json.load(open('/tmp/check30.json'))
+mx=m.max_kf_time(d)
+assert mx<=d['op'], f'keyframe t={mx} exceeds op={d[\"op\"]} -> a sub-layer was not resampled'
+print('max_kf_time',mx,'<= op',d['op'],'OK')
+"
+```
+Expected: `max_kf_time 20 <= op 22 OK`. (If this fails, the resampler missed a keyframe location — fix `_scale_kf_times` before proceeding.)
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git add .claude/skills/lottie-master/scripts/lottie_gen.py
@@ -577,6 +634,14 @@ git commit -m "feat(lottie): committed 30fps success-check accent (fixture + fir
 // fr, so a wrong-fr accent would seek mis-scaled under goToAndStop(). (Nested-precomp
 // differing-fr is screened manually in asset-sourcing route A — Lottie exports carry
 // a single top-level fr, so this scan covers committed/generated accents.)
+//
+// TOLERANCE NOTE (intentional difference vs the runtime guard): this static guard is
+// STRICT (fr must be exactly 30) because it only scans GENERATED/COMMITTED accents,
+// which lottie_gen.py always emits as integer fr:30. The runtime assertAccentFps()
+// ROUNDS (Math.round) so a route-A SOURCED file at 29.97 still renders. A sourced
+// 29.97 file would pass runtime but fail this static scan — that is desired: sourced
+// accents are not committed under src/lib/lottie/, and any that are must be re-baked
+// to exactly 30.
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
@@ -689,6 +754,7 @@ git commit -m "feat(lottie): static fr===30 guard + extend forbidden-API scan to
 // box is placed in-safe-area by construction (accentBoxStyle). Mirrors dataviz-fixture.
 import React from "react";
 import { AbsoluteFill } from "remotion";
+import type { LottieAnimationData } from "@remotion/lottie";
 import { LottieAccent } from "../lib/lottie";
 import successCheck from "../lib/lottie/__fixtures__/success-check.json";
 
@@ -696,7 +762,7 @@ export const LottieFixture: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#0b0f1a" }}>
       <LottieAccent
-        animationData={successCheck as never}
+        animationData={successCheck as unknown as LottieAnimationData}
         placement={{ anchor: "center", sizePx: 320 }}
         windowFrames={30}
       />
@@ -762,7 +828,9 @@ Reuses the qa-probe ffmpeg `signalstats` mechanism (no new dependency): renders 
 - Modify: `render/package.json` (add `check:render:lottie` script)
 
 **Interfaces:**
-- Consumes: `lottie-fixture` composition (Task 8); the accent box from `accentBoxStyle({anchor:"center",sizePx:320})` → `{left:380, top:960, width:320, height:320}` (centered: `(1080-320)/2=380`; center top `(154+1632-320)/2=733`… computed at runtime, not hardcoded).
+- Consumes: `lottie-fixture` composition (Task 8); the accent box is computed by **importing `accentBoxStyle` from the TS source** (run with `node --experimental-strip-types`, as `check-tiling.mjs` already is) — NOT hardcoded — so it tracks `safeArea.ts`. For `{anchor:"center",sizePx:320}` it resolves to `{left:380, top:733, width:320, height:320}` (`(1080-320)/2=380`; `round((154+1632-320)/2)=733`).
+
+**Note:** this script is `.mjs` but imports a `.ts` helper, so it MUST be run via `node --experimental-strip-types` (Step 2 wires that into the npm script and `make` target).
 
 - [ ] **Step 1: Write the non-blank check**
 
@@ -772,6 +840,7 @@ Reuses the qa-probe ffmpeg `signalstats` mechanism (no new dependency): renders 
 // excluded so a fade-in/out isn't flagged), crops to the accent's safe-area box, and
 // asserts the region is not uniformly background — spatial luma range (YMAX-YMIN) above
 // a floor. Reuses the qa-probe ffmpeg signalstats mechanism (no JS PNG decoder).
+// Run via: node --experimental-strip-types scripts/check-lottie-render.mjs
 import { bundle } from "@remotion/bundler";
 import { getCompositions, renderStill } from "@remotion/renderer";
 import { execFile } from "node:child_process";
@@ -779,24 +848,37 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+// Import the SAME placement math the component uses, so the crop box tracks safeArea.ts.
+import { accentBoxStyle } from "../src/lib/lottie/lottie-helpers.ts";
 
 const execFileP = promisify(execFile);
 const COMP_ID = "lottie-fixture";
 const ENTRY = new URL("../src/index.ts", import.meta.url).pathname;
 const CHROMIUM = { gl: "swiftshader" };
 const RANGE_FLOOR = 40; // YMAX-YMIN over the accent box; a blank/flat box ~ 0.
-// Accent box for placement {anchor:"center", sizePx:320}: centered horizontally,
-// vertically centered in the safe area (SAFE_TOP 154 .. SAFE_BOTTOM 1632).
-const BOX = { w: 320, h: 320, x: (1080 - 320) / 2, y: Math.round((154 + 1632 - 320) / 2) };
+// Accent box = exactly what the fixture renders (placement {anchor:"center", sizePx:320}).
+const s = accentBoxStyle({ anchor: "center", sizePx: 320 });
+const BOX = { w: s.width, h: s.height, x: s.left, y: s.top };
+
+// Reuse qa-probe's mechanism: ffmpeg writes signalstats metadata across BOTH stdout
+// and stderr — concatenate both (and on error too), then regex the values out.
+async function ff(args) {
+  try {
+    const { stdout, stderr } = await execFileP("ffmpeg", args, { maxBuffer: 64 * 1024 * 1024 });
+    return stdout + stderr;
+  } catch (e) {
+    return (e.stdout || "") + (e.stderr || "");
+  }
+}
 
 async function rangeOverBox(png) {
-  const { stderr } = await execFileP("ffmpeg", [
-    "-y", "-i", png,
+  const out = await ff([
+    "-loglevel", "error", "-i", png,
     "-vf", `crop=${BOX.w}:${BOX.h}:${BOX.x}:${BOX.y},signalstats,metadata=print:file=-`,
-    "-f", "null", "-",
-  ]).catch((e) => ({ stderr: String(e.stderr ?? e) }));
-  const ymin = Number((stderr.match(/YMIN=(\d+(?:\.\d+)?)/) || [])[1]);
-  const ymax = Number((stderr.match(/YMAX=(\d+(?:\.\d+)?)/) || [])[1]);
+    "-frames:v", "1", "-f", "null", "-",
+  ]);
+  const ymin = Number((out.match(/YMIN=(\d+(?:\.\d+)?)/) || [])[1]);
+  const ymax = Number((out.match(/YMAX=(\d+(?:\.\d+)?)/) || [])[1]);
   return Number.isFinite(ymax) && Number.isFinite(ymin) ? ymax - ymin : 0;
 }
 
@@ -833,12 +915,12 @@ try {
 }
 ```
 
-- [ ] **Step 2: Add the script alias**
+- [ ] **Step 2: Add the script alias (with `--experimental-strip-types`)**
 
-In `render/package.json` `scripts`, add:
+In `render/package.json` `scripts`, add (the flag is required because the script imports a `.ts` helper):
 
 ```json
-"check:render:lottie": "node scripts/check-lottie-render.mjs",
+"check:render:lottie": "node --experimental-strip-types scripts/check-lottie-render.mjs",
 ```
 
 - [ ] **Step 3: Run the non-blank check**
@@ -851,6 +933,38 @@ Expected: each sampled frame prints `range=… OK` and the final `[check-lottie-
 ```bash
 git add render/scripts/check-lottie-render.mjs render/package.json
 git commit -m "feat(lottie): non-blank sustain-window check (ffmpeg signalstats over the accent box)"
+```
+
+---
+
+### Task 9b: Give the slow-lane checks a home (`make check-lottie`)
+
+`check:determinism:lottie` (Task 8) and `check:render:lottie` (Task 9) bundle+render, so they're correctly OUT of the fast `gate`. But — confirmed in Reconnaissance — nothing invokes the analogous dataviz check today, so they'd bit-rot unless given an explicit home. Create a Makefile target (matching the repo's existing `make` convention) and wire the proof-of-life to it.
+
+**Files:**
+- Modify: `Makefile` (add a `check-lottie` target)
+
+- [ ] **Step 1: Add the target**
+
+Append to `Makefile`:
+
+```makefile
+# Slow-lane Lottie accent checks (bundle + render; not in the fast gate).
+# Run before landing accent changes and on the proof-of-life render.
+check-lottie:
+	cd render && npm run gate && npm run test:lib && npm run check:determinism:lottie && npm run check:render:lottie
+```
+
+- [ ] **Step 2: Run the aggregate**
+
+Run: `make check-lottie`
+Expected: gate OK, lib tests pass, `lottie-fixture` byte-reproducible, accent non-blank — all green in one command.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add Makefile
+git commit -m "feat(lottie): make check-lottie — slow-lane home for the determinism + render checks"
 ```
 
 ---
@@ -916,7 +1030,7 @@ In `remotion-prompt-generator/SKILL.md`, document that any accent from `03-asset
 
 - [ ] **Step 3: codegen — emit `LottieAccent` + place the .json**
 
-In `remotion-codegen/SKILL.md`, document: for each accent in `05`, import `LottieAccent` from `../lib/lottie` and render it inside the beat's `<Sequence>` with `src="accent-<beat>.json"` (the seeded public path), `placement`, `windowFrames` = the beat length. Note the `.json` must already be in `output/F-NNN/assets/` (written by asset-sourcing) so `seed-public.sh` copies it. State the determinism contract: accents are 30fps (gate enforces), `src` path only (not absolute), no runtime recolor.
+In `remotion-codegen/SKILL.md`, document: for each accent in `05`, import `LottieAccent` from `../lib/lottie` and render it inside the beat's `<Sequence>` with `src="accent-<beat>.json"` (the seeded public path), `placement`, `windowFrames` = the beat length. Note the `.json` must already be in `output/F-NNN/assets/` (written by asset-sourcing) so `seed-public.sh` copies it. State the determinism contract: accents are 30fps (gate enforces), `src` path only (not absolute), no runtime recolor. **Codegen must also emit a build-time warning if an accent's `getLottieMetadata().durationInFrames > windowFrames`** — `loopForWindow` will play it once and the `<Sequence>` truncates it, which is usually a spec mistake (the accent doesn't finish on screen); surface it so the author shortens the accent or widens the window.
 
 - [ ] **Step 4: Verify no contradictions with the effective_style line**
 
@@ -948,14 +1062,15 @@ Invoke the `/short` pipeline (steps 1–10). During step 4 (asset-sourcing), spe
 
 Confirm `09-iteration-ledger.md` shows **STATUS: PASS** (≥85, no blockers, Cat 9 ≥70%) and the accent renders clear of the safe area (no caption/safe-area collision flagged by qa-probe).
 
-- [ ] **Step 3: Verify the per-run gates pass for the new video**
+- [ ] **Step 3: Verify the per-run gates AND the slow-lane Lottie checks pass**
 
 Run (substitute the allocated id):
 ```bash
-cd /home/zain-ali/Documents/ScriptWriter/render
-npm run gate && npm run test:lib && node --experimental-strip-types scripts/check-tiling.mjs F-NNN
+cd /home/zain-ali/Documents/ScriptWriter
+cd render && npm run gate && npm run test:lib && node --experimental-strip-types scripts/check-tiling.mjs F-NNN
+cd /home/zain-ali/Documents/ScriptWriter && make check-lottie
 ```
-Expected: all green (the new accent `.json` in the run is 30fps; `lib/lottie` clean).
+Expected: all green — fast gate + lib tests + tiling, then `make check-lottie` (byte-repro + non-blank). This is the first run that exercises the slow-lane checks as part of acceptance.
 
 - [ ] **Step 4: Commit the run via short-assembly**
 
@@ -979,9 +1094,12 @@ short-assembly (step 9) writes `README.md`, the `VIDEO_LOG.md` row, archives the
 - Route-A reject screen (rasters/fonts/expressions/nested-precomp/license) → Task 11 Step 1 (documented). ✅
 - Forbidden-API determinism scan over lib/lottie → Task 7 Step 2. ✅
 - Render-hash byte-repro fixture → Task 8. ✅
-- Render-hash quality asserts: (a) fps-match → Tasks 4/7; (b) bbox in safe area → Task 4 (`accentBoxStyle` unit test, deterministic math); (c) non-blank sustain window → Task 9 (ffmpeg). ✅
+- Render-hash quality asserts: (a) fps-match → Tasks 4/7; (b) the accent's *container box* sits in the safe area → Task 4 (`accentBoxStyle` unit test, deterministic math) — note this proves the style box, NOT that rendered Lottie content stays within it (canvas-sized shape accents don't overflow, and Task 9 confirms content is present inside the box, but neither guards content drawn *outside* the box); (c) non-blank sustain window → Task 9 (ffmpeg). ✅
+- Slow-lane checks have an explicit home → Task 9b (`make check-lottie`), run in Task 12 Step 3. ✅
+- Resample lossiness + half-scale guard → Task 2 (lossiness note + `max_kf_time <= op` assertion, Step 4). ✅
+- fps gate tolerance difference (static strict vs runtime rounded) → documented in Task 7 script comment. ✅
 - seed-public copies accent .json → Task 10. ✅
-- Pipeline wiring (asset-sourcing/prompt-gen/codegen) → Task 11. ✅
+- Pipeline wiring (asset-sourcing/prompt-gen/codegen) + accent>window warning → Task 11. ✅
 - No new effective_style / selector machinery → Task 11 Step 4 verifies unchanged. ✅
 - Proof-of-life on a fresh /short run → Task 12. ✅
 - Version pin to existing @remotion/* exact → Task 3. ✅
