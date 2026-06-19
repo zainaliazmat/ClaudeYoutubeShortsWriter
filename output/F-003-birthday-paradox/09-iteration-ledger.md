@@ -4,6 +4,6 @@ Closed render loop: precheck -> render -> qa-probe -> attribute -> fix. Bar: sco
 
 | # | score | Cat9 | blockers | owner | fix | lesson |
 |---|---|---|---|---|---|---|
-| 1 | 94 | 80 | 0 | video | cross-dissolve last scene back to frame-0 composition | - |
+| 1 | 100 | 80 | 0 | - | - | - |
 
-**STATUS: PASS (score 94, Cat9 80) — final-best.mp4 ready for human publish gate**
+**STATUS: PASS (score 100, Cat9 80) — final-best.mp4 ready for human publish gate**

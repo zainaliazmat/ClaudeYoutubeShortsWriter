@@ -19,8 +19,14 @@ const Kicker: React.FC<{ text: string }> = ({ text }) => (
   </Centered>
 );
 
-// Big Anton hero (e.g. "23")
-const Hero: React.FC<{ value: string; color?: string }> = ({ value, color = COLORS.text }) => {
+// Big Anton hero (e.g. "23"). `instant` = present at full opacity from local frame 0
+// (no fade-in) — used by the Hook so frame 0 is a punchy thumbnail (F-001 lesson) AND
+// matches the LoopBack hero at frame 834 for a clean loop seam.
+const Hero: React.FC<{ value: string; color?: string; instant?: boolean }> = ({
+  value,
+  color = COLORS.text,
+  instant = false,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const o = heroOvershoot(frame, fps, 0);
@@ -31,8 +37,8 @@ const Hero: React.FC<{ value: string; color?: string }> = ({ value, color = COLO
           fontFamily: ANTON,
           fontSize: 300,
           color,
-          transform: o.transform,
-          opacity: o.opacity,
+          transform: instant ? "none" : o.transform,
+          opacity: instant ? 1 : o.opacity,
           textShadow: `0 0 56px ${color}66`,
           lineHeight: 1,
         }}
@@ -71,7 +77,7 @@ const HeroPct: React.FC<{ target: number; decimals?: number; color?: string }> =
 
 export const Hook: React.FC = () => (
   <>
-    <Hero value="23" color={COLORS.gold} />
+    <Hero value="23" color={COLORS.gold} instant />
     <Kicker text="50% CHANCE TWO SHARE A BIRTHDAY" />
   </>
 );
@@ -108,7 +114,7 @@ export const Beat5: React.FC = () => (
 
 export const LoopBack: React.FC = () => (
   <>
-    <Hero value="23" color={COLORS.gold} />
+    <Hero value="23" color={COLORS.gold} instant />
     <Kicker text="50% CHANCE TWO SHARE A BIRTHDAY" />
   </>
 );
