@@ -34,7 +34,7 @@
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
     "test:lib": "node --experimental-strip-types --test 'src/lib/**/*.test.ts'",
-    "gate": "tsc && eslint src"
+    "gate": "tsc && eslint src && node scripts/check-dataviz-static.mjs"
   },
   "sideEffects": [
     "*.css"
