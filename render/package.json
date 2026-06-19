@@ -8,6 +8,7 @@
   "dependencies": {
     "@remotion/cli": "4.0.478",
     "@remotion/google-fonts": "4.0.478",
+    "@remotion/lottie": "4.0.478",
     "@remotion/media": "4.0.478",
     "@remotion/tailwind-v4": "4.0.478",
     "d3-scale": "^4.0.2",
