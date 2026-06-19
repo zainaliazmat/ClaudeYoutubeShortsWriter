@@ -18,7 +18,7 @@ import { join, relative } from "node:path";
 const ROOT = new URL("..", import.meta.url).pathname;
 const SRC = join(ROOT, "src");
 
-const SCAN_DIRS = [join(SRC, "lib", "dataviz")];
+const SCAN_DIRS = [join(SRC, "lib", "dataviz"), join(SRC, "lib", "lottie")];
 // Scene dirs: any src/F-* and src/cleopatra (the per-video composition code).
 for (const e of readdirSync(SRC, { withFileTypes: true })) {
   if (e.isDirectory() && (/^F-/.test(e.name) || e.name === "cleopatra" || e.name === "dataviz-fixture")) {
