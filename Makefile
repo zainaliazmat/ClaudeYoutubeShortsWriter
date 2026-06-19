@@ -1,5 +1,5 @@
 # Fathom factory — convenience targets. See SETUP.md.
-.PHONY: doctor bootstrap render render-f001 clean-public help
+.PHONY: doctor bootstrap render render-f001 clean-public check-lottie help
 
 help:
 	@echo "make bootstrap   - set up .venv-tts + render/node_modules + seed F-001 public"
@@ -21,3 +21,8 @@ render:
 
 clean-public:
 	@find render/public -maxdepth 1 -type f ! -name '.gitkeep' -delete && echo "render/public cleaned"
+
+# Slow-lane Lottie accent checks (bundle + render; not in the fast gate).
+# Run before landing accent changes and on the proof-of-life render.
+check-lottie:
+	cd render && npm run gate && npm run test:lib && npm run check:determinism:lottie && npm run check:render:lottie
