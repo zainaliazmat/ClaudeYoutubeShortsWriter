@@ -13,6 +13,7 @@ import { makeEditorialShort } from "./v3kit/StyleEditorial";
 import { makeMotionShort } from "./v3kit/StyleMotion";
 import { FROZEN } from "./v3kit/frozen";
 import { DatavizFixture } from "./dataviz-fixture/Fixture";
+import { LottieFixture } from "./lottie-fixture/Fixture";
 
 // v3 — three distinct aesthetic directions, each for both videos. Frozen timing/VO/audio.
 const V3 = [
@@ -119,6 +120,14 @@ export const RemotionRoot: React.FC = () => {
         id="dataviz-fixture"
         component={DatavizFixture}
         durationInFrames={90}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+      />
+      <Composition
+        id="lottie-fixture"
+        component={LottieFixture}
+        durationInFrames={30}
         fps={FPS}
         width={WIDTH}
         height={HEIGHT}
