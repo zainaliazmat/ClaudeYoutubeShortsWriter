@@ -84,7 +84,8 @@ const BeatCaptions: React.FC<{
   const accent = ["beat4", "beat5", "beat6"].includes(beatName) ? accentB : accentA;
   // Merge consecutive same-display words (collapses a multi-token spoken number like
   // "2,500" into one) and apply the same display overrides as the burned captions.
-  const overrides = video === "F-001" ? { "2,500": "~2,500", "2,000": "~2,000", "450": "~450" } : {};
+  const overrides: Record<string, string> =
+    video === "F-001" ? { "2,500": "~2,500", "2,000": "~2,000", "450": "~450" } : {};
   const tokens = buildTokens(fz.words, overrides).filter((t) => t.beat === beatName);
   const visible = tokens.filter((t) => t.start <= frame);
   const localF = frame - from;
