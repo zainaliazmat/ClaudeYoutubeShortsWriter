@@ -197,6 +197,11 @@ export async function ocrFrameText(file, timeS) {
 // buildTokens); captionSamplePlan picks a stable interior frame per token. Returns per-token
 // ratios + a finding. Self-skips (ratios=[]) when tesseract is absent — suite stays green.
 export async function captionLegibilityProbe(file, vo, fps = 30) {
+  // Skip cleanly if the video file is absent (mirrors probe()'s existence guard):
+  // OCR-ing a nonexistent file would error in ffmpeg. Production always passes an
+  // existing final.mp4, so this changes no real behavior — it just makes the probe
+  // (and its test) robust on a machine that HAS tesseract installed.
+  if (!fs.existsSync(file)) return { ratios: [], finding: null, skipped: true };
   if (!(await hasBin("tesseract"))) return { ratios: [], finding: null, skipped: true };
   const words = vo.words || [];
   if (words.length === 0) return { ratios: [], finding: null, skipped: true };
