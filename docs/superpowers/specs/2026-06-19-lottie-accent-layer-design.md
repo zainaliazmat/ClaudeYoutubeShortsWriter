@@ -167,10 +167,12 @@ qa-probe / render-qa  →  accent clears safe-area + captions, is loop-safe, not
   quality checks: (a) accent fps == comp fps, (b) bounding box inside the safe area on a sampled frame,
   (c) min non-transparent pixel fraction across the accent's **sustain window** (entrance/exit ramp
   excluded, so a fade-in/out doesn't trip the gate).
-- **Proof-of-life:** land the primitive by adding one real accent (e.g. a `success-check` or arrow)
-  to an existing short or the next `/short` run, rendered through the full render→QA loop to
-  **STATUS: PASS** (≥85, no blockers, Cat 9 ≥70%) with the accent clear of the safe-area. (Which video
-  is chosen during planning.)
+- **Proof-of-life:** land the primitive on **a fresh `/short` run** (not a retrofit of F-001/F-002/F-003) —
+  the run's `asset-sourcing` step specs one real accent (e.g. a `success-check` or arrow) on a beat
+  that benefits, codegen consumes it, and the full render→QA loop reaches **STATUS: PASS** (≥85, no
+  blockers, Cat 9 ≥70%) with the accent clear of the safe-area. This exercises the whole pipeline path
+  (asset-sourcing → prompt-gen → codegen → seed-public → render → QA) end-to-end rather than a
+  hand-placed accent in isolation.
 
 ## Out of scope (YAGNI / deferred)
 
