@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert";
-import { checkSchemaVersion, assertSchemaVersion, SCHEMA } from "../schema.mjs";
+import {
+  checkSchemaVersion,
+  assertSchemaVersion,
+  SCHEMA,
+  parseEffectiveStyle,
+  validateChartSpec,
+  DEFAULT_EFFECTIVE_STYLE,
+} from "../schema.mjs";
 
 test("checkSchemaVersion: accepts the version this engine speaks", () => {
   for (const [name, v] of Object.entries(SCHEMA)) {
@@ -56,4 +63,76 @@ test("assertSchemaVersion: throws with a custom error ctor + payload (render-run
     assert.ok(e instanceof GateError);
     assert.equal(e.payload.owner, "human");
   }
+});
+
+// ---- d3 style decision: effective_style parsing (DX-3) ----
+test("parseEffectiveStyle: a single d3 line is read as d3", () => {
+  const r = parseEffectiveStyle("title\neffective_style: d3\nmore");
+  assert.equal(r.style, "d3");
+  assert.equal(r.missing, false);
+  assert.equal(r.multiple, false);
+});
+
+test("parseEffectiveStyle: MISSING line defaults to kinetic-typography (fail-safe, Criterion 7)", () => {
+  const r = parseEffectiveStyle("an old prompt with no style line");
+  assert.equal(r.style, DEFAULT_EFFECTIVE_STYLE);
+  assert.equal(r.style, "kinetic-typography");
+  assert.equal(r.missing, true);
+});
+
+test("parseEffectiveStyle: MULTIPLE lines are flagged (reviewer error) and default safely", () => {
+  const r = parseEffectiveStyle("effective_style: d3\neffective_style: kinetic-typography");
+  assert.equal(r.multiple, true);
+  assert.equal(r.style, "kinetic-typography");
+});
+
+test("parseEffectiveStyle: an unknown value is invalid and defaults safely", () => {
+  const r = parseEffectiveStyle("effective_style: lottie");
+  assert.equal(r.invalid, true);
+  assert.equal(r.style, "kinetic-typography");
+});
+
+// ---- d3 chart-spec validation + halt routing (DX-1, DX-5) ----
+test("validateChartSpec: a well-formed bars spec with >=3 sourced points passes", () => {
+  const spec = {
+    schemaVersion: 1,
+    archetype: "bars",
+    points: [
+      { label: "a", value: 10, sourceRef: "ref1" },
+      { label: "b", value: 20, sourceRef: "ref2" },
+      { label: "c", value: 30, sourceRef: "ref3" },
+    ],
+  };
+  const r = validateChartSpec(spec);
+  assert.equal(r.ok, true);
+  assert.equal(r.owner, null);
+});
+
+test("validateChartSpec: <3 sourced points routes to owner=script (re-run writer)", () => {
+  const spec = {
+    archetype: "bars",
+    points: [
+      { label: "a", value: 10, sourceRef: "ref1" },
+      { label: "b", value: 20 }, // unsourced -> not counted
+    ],
+  };
+  const r = validateChartSpec(spec);
+  assert.equal(r.ok, false);
+  assert.equal(r.owner, "script");
+  assert.match(r.reason, />=3 sourced/);
+});
+
+test("validateChartSpec: a bad archetype routes to owner=video (re-run prompt-generator)", () => {
+  const r = validateChartSpec({ archetype: "piechart", points: [] });
+  assert.equal(r.ok, false);
+  assert.equal(r.owner, "video");
+});
+
+test("validateChartSpec: a null/missing spec routes to owner=video", () => {
+  assert.equal(validateChartSpec(null).owner, "video");
+  assert.equal(validateChartSpec(undefined).ok, false);
+});
+
+test("SCHEMA registers chart-spec at v1", () => {
+  assert.equal(SCHEMA["chart-spec"], 1);
 });
