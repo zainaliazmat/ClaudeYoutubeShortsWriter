@@ -2,6 +2,7 @@ import "./index.css";
 import { Composition } from "remotion";
 import { Short as F001, calculateMetadata as f001Meta } from "./F-001/Short";
 import { Short as F002, calculateMetadata as f002Meta } from "./F-002/Short";
+import { Short as F003, calculateMetadata as f003Meta } from "./F-003/Short";
 import { WIDTH, HEIGHT, FPS } from "./lib/safeArea";
 import { HookCard } from "./hooks-lab/HookCard";
 import { VARIANTS } from "./hooks-lab/variants";
@@ -47,6 +48,19 @@ export const RemotionRoot: React.FC = () => {
         id="F-002-trex-closer-than-stegosaurus"
         component={F002}
         calculateMetadata={f002Meta}
+        durationInFrames={1}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        defaultProps={{ audio: true }}
+      />
+
+      {/* F-003 — the birthday paradox: the first effective_style: d3 video (lib/dataviz
+          GrowthCurve). Audio reuses F-001/F-002's licensed Pixabay binaries. */}
+      <Composition
+        id="F-003-birthday-paradox"
+        component={F003}
+        calculateMetadata={f003Meta}
         durationInFrames={1}
         fps={FPS}
         width={WIDTH}

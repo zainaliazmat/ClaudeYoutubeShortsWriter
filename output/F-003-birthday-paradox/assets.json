@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "compositionId": "F-003-birthday-paradox",
+  "vo": "vo.wav",
+  "assets": [
+    {
+      "file": "music-dark-tension.mp3",
+      "kind": "music",
+      "url": "https://pixabay.com/music/suspense-dark-tension-ambience-thriller-atmosphere-cinematic-background-174648/",
+      "license": "Pixabay Content License (commercial use, no attribution required)"
+    },
+    {
+      "file": "sfx-reveal-hit.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/",
+      "license": "Pixabay Content License"
+    },
+    {
+      "file": "sfx-tick.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/",
+      "license": "Pixabay Content License"
+    },
+    {
+      "file": "sfx-whoosh.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/",
+      "license": "Pixabay Content License"
+    }
+  ]
+}

@@ -1,0 +1,691 @@
+{
+  "schemaVersion": 1,
+  "fps": 30,
+  "voice": "am_michael",
+  "speed": 1.08,
+  "total": 834,
+  "words": [
+    {
+      "i": 0,
+      "display": "Put",
+      "spoken": "Put",
+      "start": 0,
+      "end": 3,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 1,
+      "display": "23",
+      "spoken": "twenty-three",
+      "start": 3,
+      "end": 18,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 2,
+      "display": "people",
+      "spoken": "people",
+      "start": 18,
+      "end": 29,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 3,
+      "display": "in",
+      "spoken": "in",
+      "start": 29,
+      "end": 31,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 4,
+      "display": "a",
+      "spoken": "a",
+      "start": 31,
+      "end": 34,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 5,
+      "display": "room",
+      "spoken": "room",
+      "start": 34,
+      "end": 43,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 6,
+      "display": "and",
+      "spoken": "and",
+      "start": 44,
+      "end": 47,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 7,
+      "display": "there's",
+      "spoken": "there's",
+      "start": 47,
+      "end": 53,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 8,
+      "display": "a",
+      "spoken": "a",
+      "start": 53,
+      "end": 56,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 9,
+      "display": "50",
+      "spoken": "fifty",
+      "start": 56,
+      "end": 66,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 10,
+      "display": "percent",
+      "spoken": "percent",
+      "start": 66,
+      "end": 77,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 11,
+      "display": "chance",
+      "spoken": "chance",
+      "start": 77,
+      "end": 89,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 12,
+      "display": "two",
+      "spoken": "two",
+      "start": 89,
+      "end": 95,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 13,
+      "display": "of",
+      "spoken": "of",
+      "start": 95,
+      "end": 97,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 14,
+      "display": "them",
+      "spoken": "them",
+      "start": 97,
+      "end": 104,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 15,
+      "display": "share",
+      "spoken": "share",
+      "start": 104,
+      "end": 110,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 16,
+      "display": "a",
+      "spoken": "a",
+      "start": 110,
+      "end": 113,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 17,
+      "display": "birthday",
+      "spoken": "birthday",
+      "start": 113,
+      "end": 138,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 18,
+      "display": "It",
+      "spoken": "It",
+      "start": 141,
+      "end": 146,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 19,
+      "display": "feels",
+      "spoken": "feels",
+      "start": 146,
+      "end": 156,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 20,
+      "display": "like",
+      "spoken": "like",
+      "start": 156,
+      "end": 163,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 21,
+      "display": "you'd",
+      "spoken": "you'd",
+      "start": 163,
+      "end": 169,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 22,
+      "display": "need",
+      "spoken": "need",
+      "start": 169,
+      "end": 176,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 23,
+      "display": "hundreds",
+      "spoken": "hundreds",
+      "start": 176,
+      "end": 201,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 24,
+      "display": "But",
+      "spoken": "But",
+      "start": 203,
+      "end": 207,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 25,
+      "display": "23",
+      "spoken": "twenty-three",
+      "start": 207,
+      "end": 224,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 26,
+      "display": "is",
+      "spoken": "is",
+      "start": 224,
+      "end": 229,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 27,
+      "display": "less",
+      "spoken": "less",
+      "start": 229,
+      "end": 237,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 28,
+      "display": "than",
+      "spoken": "than",
+      "start": 237,
+      "end": 241,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 29,
+      "display": "a",
+      "spoken": "a",
+      "start": 241,
+      "end": 243,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 30,
+      "display": "fifteenth",
+      "spoken": "fifteenth",
+      "start": 243,
+      "end": 257,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 31,
+      "display": "of",
+      "spoken": "of",
+      "start": 257,
+      "end": 259,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 32,
+      "display": "the",
+      "spoken": "the",
+      "start": 259,
+      "end": 263,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 33,
+      "display": "year",
+      "spoken": "year",
+      "start": 263,
+      "end": 282,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 34,
+      "display": "With",
+      "spoken": "With",
+      "start": 285,
+      "end": 291,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 35,
+      "display": "just",
+      "spoken": "just",
+      "start": 291,
+      "end": 298,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 36,
+      "display": "10",
+      "spoken": "ten",
+      "start": 298,
+      "end": 306,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 37,
+      "display": "people",
+      "spoken": "people",
+      "start": 306,
+      "end": 315,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 38,
+      "display": "the",
+      "spoken": "the",
+      "start": 317,
+      "end": 321,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 39,
+      "display": "odds",
+      "spoken": "odds",
+      "start": 321,
+      "end": 333,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 40,
+      "display": "are",
+      "spoken": "are",
+      "start": 333,
+      "end": 338,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 41,
+      "display": "already",
+      "spoken": "already",
+      "start": 338,
+      "end": 350,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 42,
+      "display": "12",
+      "spoken": "twelve",
+      "start": 350,
+      "end": 360,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 43,
+      "display": "percent",
+      "spoken": "percent",
+      "start": 360,
+      "end": 384,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 44,
+      "display": "By",
+      "spoken": "By",
+      "start": 387,
+      "end": 393,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 45,
+      "display": "30",
+      "spoken": "thirty",
+      "start": 393,
+      "end": 407,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 46,
+      "display": "it",
+      "spoken": "it",
+      "start": 409,
+      "end": 413,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 47,
+      "display": "jumps",
+      "spoken": "jumps",
+      "start": 413,
+      "end": 424,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 48,
+      "display": "to",
+      "spoken": "to",
+      "start": 424,
+      "end": 428,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 49,
+      "display": "71",
+      "spoken": "seventy-one",
+      "start": 428,
+      "end": 445,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 50,
+      "display": "percent",
+      "spoken": "percent",
+      "start": 445,
+      "end": 470,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 51,
+      "display": "By",
+      "spoken": "By",
+      "start": 473,
+      "end": 480,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 52,
+      "display": "50",
+      "spoken": "fifty",
+      "start": 480,
+      "end": 495,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 53,
+      "display": "it's",
+      "spoken": "it's",
+      "start": 497,
+      "end": 503,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 54,
+      "display": "97",
+      "spoken": "ninety-seven",
+      "start": 503,
+      "end": 537,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 55,
+      "display": "And",
+      "spoken": "And",
+      "start": 540,
+      "end": 544,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 56,
+      "display": "with",
+      "spoken": "with",
+      "start": 544,
+      "end": 549,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 57,
+      "display": "70",
+      "spoken": "seventy",
+      "start": 549,
+      "end": 561,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 58,
+      "display": "people",
+      "spoken": "people",
+      "start": 561,
+      "end": 573,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 59,
+      "display": "it's",
+      "spoken": "it's",
+      "start": 574,
+      "end": 580,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 60,
+      "display": "99.9",
+      "spoken": "99.9",
+      "start": 580,
+      "end": 618,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 61,
+      "display": "percent",
+      "spoken": "percent",
+      "start": 618,
+      "end": 638,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 62,
+      "display": "Practically",
+      "spoken": "Practically",
+      "start": 641,
+      "end": 660,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 63,
+      "display": "guaranteed",
+      "spoken": "guaranteed",
+      "start": 660,
+      "end": 691,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 64,
+      "display": "The",
+      "spoken": "The",
+      "start": 695,
+      "end": 700,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 65,
+      "display": "magic",
+      "spoken": "magic",
+      "start": 700,
+      "end": 712,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 66,
+      "display": "number",
+      "spoken": "number",
+      "start": 712,
+      "end": 723,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 67,
+      "display": "is",
+      "spoken": "is",
+      "start": 723,
+      "end": 728,
+      "beat": "beat5",
+      "region": 0
+    },
+    {
+      "i": 68,
+      "display": "23",
+      "spoken": "twenty-three",
+      "start": 728,
+      "end": 759,
+      "beat": "beat5",
+      "region": 0
+    }
+  ],
+  "beats": [
+    {
+      "id": "hook",
+      "start": 0,
+      "end": 138
+    },
+    {
+      "id": "beat1",
+      "start": 138,
+      "end": 282
+    },
+    {
+      "id": "beat2",
+      "start": 282,
+      "end": 384
+    },
+    {
+      "id": "beat3",
+      "start": 384,
+      "end": 537
+    },
+    {
+      "id": "beat4",
+      "start": 537,
+      "end": 691
+    },
+    {
+      "id": "beat5",
+      "start": 691,
+      "end": 759
+    },
+    {
+      "id": "loop",
+      "start": 759,
+      "end": 834
+    }
+  ],
+  "speech_regions": [
+    {
+      "start": 0,
+      "end": 759
+    }
+  ],
+  "envelope": [
+    {
+      "frame": 0,
+      "vol": 0.22
+    },
+    {
+      "frame": 759,
+      "vol": 0.22
+    },
+    {
+      "frame": 768,
+      "vol": 0.72
+    },
+    {
+      "frame": 834,
+      "vol": 0.72
+    }
+  ]
+}
