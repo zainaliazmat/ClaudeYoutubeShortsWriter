@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { Short as F001, calculateMetadata as f001Meta } from "./F-001/Short";
 import { Short as F002, calculateMetadata as f002Meta } from "./F-002/Short";
 import { Short as F003, calculateMetadata as f003Meta } from "./F-003/Short";
+import { Short as F004, calculateMetadata as f004Meta } from "./F-004/Short";
 import { WIDTH, HEIGHT, FPS } from "./lib/safeArea";
 import { HookCard } from "./hooks-lab/HookCard";
 import { VARIANTS } from "./hooks-lab/variants";
@@ -63,6 +64,18 @@ export const RemotionRoot: React.FC = () => {
         id="F-003-birthday-paradox"
         component={F003}
         calculateMetadata={f003Meta}
+        durationInFrames={1}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        defaultProps={{ audio: true }}
+      />
+
+      {/* F-004 — Honey Never Spoils: kinetic-typography + first Lottie accent (beat3 payoff). */}
+      <Composition
+        id="F-004-honey-never-spoils"
+        component={F004}
+        calculateMetadata={f004Meta}
         durationInFrames={1}
         fps={FPS}
         width={WIDTH}

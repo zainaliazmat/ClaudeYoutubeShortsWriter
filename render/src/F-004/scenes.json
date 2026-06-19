@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "order": [
+    { "name": "hook",  "from": 0,   "duration": 109 },
+    { "name": "beat1", "from": 109, "duration": 178 },
+    { "name": "beat2", "from": 287, "duration": 165 },
+    { "name": "beat3", "from": 452, "duration": 186 },
+    { "name": "beat4", "from": 638, "duration": 202 },
+    { "name": "loop",  "from": 840, "duration": 75  }
+  ]
+}

@@ -1,0 +1,785 @@
+{
+  "schemaVersion": 1,
+  "fps": 30,
+  "voice": "am_michael",
+  "speed": 1.08,
+  "total": 915,
+  "words": [
+    {
+      "i": 0,
+      "display": "Everything",
+      "spoken": "Everything",
+      "start": 0,
+      "end": 10,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 1,
+      "display": "in",
+      "spoken": "in",
+      "start": 10,
+      "end": 12,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 2,
+      "display": "your",
+      "spoken": "your",
+      "start": 12,
+      "end": 16,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 3,
+      "display": "kitchen",
+      "spoken": "kitchen",
+      "start": 16,
+      "end": 28,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 4,
+      "display": "has",
+      "spoken": "has",
+      "start": 28,
+      "end": 33,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 5,
+      "display": "an",
+      "spoken": "an",
+      "start": 33,
+      "end": 36,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 6,
+      "display": "expiration",
+      "spoken": "expiration",
+      "start": 36,
+      "end": 57,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 7,
+      "display": "date",
+      "spoken": "date",
+      "start": 57,
+      "end": 76,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 8,
+      "display": "Except",
+      "spoken": "Except",
+      "start": 79,
+      "end": 89,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 9,
+      "display": "one",
+      "spoken": "one",
+      "start": 89,
+      "end": 97,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 10,
+      "display": "food",
+      "spoken": "food",
+      "start": 97,
+      "end": 109,
+      "beat": "hook",
+      "region": 0
+    },
+    {
+      "i": 11,
+      "display": "Honey",
+      "spoken": "Honey",
+      "start": 111,
+      "end": 129,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 12,
+      "display": "It's",
+      "spoken": "It's",
+      "start": 133,
+      "end": 137,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 13,
+      "display": "almost",
+      "spoken": "almost",
+      "start": 137,
+      "end": 149,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 14,
+      "display": "pure",
+      "spoken": "pure",
+      "start": 149,
+      "end": 160,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 15,
+      "display": "sugar",
+      "spoken": "sugar",
+      "start": 160,
+      "end": 170,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 16,
+      "display": "with",
+      "spoken": "with",
+      "start": 170,
+      "end": 176,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 17,
+      "display": "barely",
+      "spoken": "barely",
+      "start": 176,
+      "end": 187,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 18,
+      "display": "any",
+      "spoken": "any",
+      "start": 187,
+      "end": 194,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 19,
+      "display": "water",
+      "spoken": "water",
+      "start": 194,
+      "end": 204,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 20,
+      "display": "so",
+      "spoken": "so",
+      "start": 205,
+      "end": 211,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 21,
+      "display": "bacteria",
+      "spoken": "bacteria",
+      "start": 211,
+      "end": 230,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 22,
+      "display": "and",
+      "spoken": "and",
+      "start": 230,
+      "end": 233,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 23,
+      "display": "microbes",
+      "spoken": "microbes",
+      "start": 233,
+      "end": 250,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 24,
+      "display": "can't",
+      "spoken": "can't",
+      "start": 250,
+      "end": 259,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 25,
+      "display": "survive",
+      "spoken": "survive",
+      "start": 259,
+      "end": 272,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 26,
+      "display": "in",
+      "spoken": "in",
+      "start": 272,
+      "end": 276,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 27,
+      "display": "it",
+      "spoken": "it",
+      "start": 276,
+      "end": 287,
+      "beat": "beat1",
+      "region": 0
+    },
+    {
+      "i": 28,
+      "display": "It's",
+      "spoken": "It's",
+      "start": 289,
+      "end": 293,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 29,
+      "display": "also",
+      "spoken": "also",
+      "start": 293,
+      "end": 304,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 30,
+      "display": "acidic",
+      "spoken": "acidic",
+      "start": 304,
+      "end": 316,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 31,
+      "display": "and",
+      "spoken": "and",
+      "start": 318,
+      "end": 322,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 32,
+      "display": "bees",
+      "spoken": "bees",
+      "start": 322,
+      "end": 333,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 33,
+      "display": "add",
+      "spoken": "add",
+      "start": 333,
+      "end": 338,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 34,
+      "display": "an",
+      "spoken": "an",
+      "start": 338,
+      "end": 342,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 35,
+      "display": "enzyme",
+      "spoken": "enzyme",
+      "start": 342,
+      "end": 357,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 36,
+      "display": "that",
+      "spoken": "that",
+      "start": 357,
+      "end": 361,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 37,
+      "display": "makes",
+      "spoken": "makes",
+      "start": 361,
+      "end": 369,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 38,
+      "display": "hydrogen",
+      "spoken": "hydrogen",
+      "start": 369,
+      "end": 383,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 39,
+      "display": "peroxide",
+      "spoken": "peroxide",
+      "start": 383,
+      "end": 406,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 40,
+      "display": "a",
+      "spoken": "a",
+      "start": 407,
+      "end": 410,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 41,
+      "display": "natural",
+      "spoken": "natural",
+      "start": 410,
+      "end": 423,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 42,
+      "display": "preservative",
+      "spoken": "preservative",
+      "start": 423,
+      "end": 452,
+      "beat": "beat2",
+      "region": 0
+    },
+    {
+      "i": 43,
+      "display": "So",
+      "spoken": "So",
+      "start": 455,
+      "end": 459,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 44,
+      "display": "when",
+      "spoken": "when",
+      "start": 459,
+      "end": 463,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 45,
+      "display": "archaeologists",
+      "spoken": "archaeologists",
+      "start": 463,
+      "end": 487,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 46,
+      "display": "open",
+      "spoken": "open",
+      "start": 487,
+      "end": 497,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 47,
+      "display": "ancient",
+      "spoken": "ancient",
+      "start": 497,
+      "end": 507,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 48,
+      "display": "Egyptian",
+      "spoken": "Egyptian",
+      "start": 507,
+      "end": 522,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 49,
+      "display": "tombs",
+      "spoken": "tombs",
+      "start": 522,
+      "end": 534,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 50,
+      "display": "they",
+      "spoken": "they",
+      "start": 535,
+      "end": 540,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 51,
+      "display": "keep",
+      "spoken": "keep",
+      "start": 540,
+      "end": 547,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 52,
+      "display": "finding",
+      "spoken": "finding",
+      "start": 547,
+      "end": 559,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 53,
+      "display": "honey",
+      "spoken": "honey",
+      "start": 559,
+      "end": 569,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 54,
+      "display": "thousands",
+      "spoken": "thousands",
+      "start": 569,
+      "end": 582,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 55,
+      "display": "of",
+      "spoken": "of",
+      "start": 582,
+      "end": 585,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 56,
+      "display": "years",
+      "spoken": "years",
+      "start": 585,
+      "end": 593,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 57,
+      "display": "old",
+      "spoken": "old",
+      "start": 593,
+      "end": 601,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 58,
+      "display": "still",
+      "spoken": "still",
+      "start": 603,
+      "end": 611,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 59,
+      "display": "preserved",
+      "spoken": "preserved",
+      "start": 611,
+      "end": 638,
+      "beat": "beat3",
+      "region": 0
+    },
+    {
+      "i": 60,
+      "display": "The",
+      "spoken": "The",
+      "start": 642,
+      "end": 647,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 61,
+      "display": "only",
+      "spoken": "only",
+      "start": 647,
+      "end": 657,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 62,
+      "display": "catch",
+      "spoken": "catch",
+      "start": 657,
+      "end": 668,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 63,
+      "display": "keep",
+      "spoken": "keep",
+      "start": 670,
+      "end": 677,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 64,
+      "display": "it",
+      "spoken": "it",
+      "start": 677,
+      "end": 681,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 65,
+      "display": "sealed",
+      "spoken": "sealed",
+      "start": 681,
+      "end": 703,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 66,
+      "display": "Add",
+      "spoken": "Add",
+      "start": 707,
+      "end": 716,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 67,
+      "display": "water",
+      "spoken": "water",
+      "start": 716,
+      "end": 728,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 68,
+      "display": "and",
+      "spoken": "and",
+      "start": 728,
+      "end": 731,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 69,
+      "display": "it",
+      "spoken": "it",
+      "start": 731,
+      "end": 734,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 70,
+      "display": "can",
+      "spoken": "can",
+      "start": 734,
+      "end": 740,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 71,
+      "display": "spoil",
+      "spoken": "spoil",
+      "start": 740,
+      "end": 760,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 72,
+      "display": "But",
+      "spoken": "But",
+      "start": 763,
+      "end": 767,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 73,
+      "display": "if",
+      "spoken": "if",
+      "start": 767,
+      "end": 770,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 74,
+      "display": "it",
+      "spoken": "it",
+      "start": 770,
+      "end": 772,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 75,
+      "display": "just",
+      "spoken": "just",
+      "start": 772,
+      "end": 779,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 76,
+      "display": "crystallizes",
+      "spoken": "crystallizes",
+      "start": 779,
+      "end": 805,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 77,
+      "display": "it's",
+      "spoken": "it's",
+      "start": 806,
+      "end": 811,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 78,
+      "display": "still",
+      "spoken": "still",
+      "start": 811,
+      "end": 819,
+      "beat": "beat4",
+      "region": 0
+    },
+    {
+      "i": 79,
+      "display": "good",
+      "spoken": "good",
+      "start": 819,
+      "end": 840,
+      "beat": "beat4",
+      "region": 0
+    }
+  ],
+  "beats": [
+    {
+      "id": "hook",
+      "start": 0,
+      "end": 109
+    },
+    {
+      "id": "beat1",
+      "start": 109,
+      "end": 287
+    },
+    {
+      "id": "beat2",
+      "start": 287,
+      "end": 452
+    },
+    {
+      "id": "beat3",
+      "start": 452,
+      "end": 638
+    },
+    {
+      "id": "beat4",
+      "start": 638,
+      "end": 840
+    },
+    {
+      "id": "loop",
+      "start": 840,
+      "end": 915
+    }
+  ],
+  "speech_regions": [
+    {
+      "start": 0,
+      "end": 840
+    }
+  ],
+  "envelope": [
+    {
+      "frame": 0,
+      "vol": 0.22
+    },
+    {
+      "frame": 840,
+      "vol": 0.22
+    },
+    {
+      "frame": 849,
+      "vol": 0.72
+    },
+    {
+      "frame": 915,
+      "vol": 0.72
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "compositionId": "F-004-honey-never-spoils",
+  "vo": "vo.wav",
+  "assets": [
+    {
+      "file": "music-inspiring-cinematic-ambient.mp3",
+      "kind": "music",
+      "url": "https://pixabay.com/music/modern-classical-inspiring-cinematic-ambient-documentary-music-289860/",
+      "license": "Pixabay Content License — royalty-free, commercial use permitted, no attribution required"
+    },
+    {
+      "file": "sfx-reveal-bloom.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/search/success/",
+      "license": "Pixabay Content License — royalty-free, commercial use permitted, no attribution required"
+    },
+    {
+      "file": "sfx-soft-chime.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/search/soft%20chime/",
+      "license": "Pixabay Content License — royalty-free, commercial use permitted, no attribution required"
+    },
+    {
+      "file": "sfx-lid-pop.mp3",
+      "kind": "sfx",
+      "url": "https://pixabay.com/sound-effects/search/pop/",
+      "license": "Pixabay Content License — royalty-free, commercial use permitted, no attribution required"
+    },
+    {
+      "file": "accent-beat3.json",
+      "kind": "lottie",
+      "url": "output/F-004-honey-never-spoils/assets/accent-beat3.json",
+      "license": "Code-generated — no external IP, no license required"
+    }
+  ]
+}
