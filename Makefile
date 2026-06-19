@@ -25,4 +25,4 @@ clean-public:
 # Slow-lane Lottie accent checks (bundle + render; not in the fast gate).
 # Run before landing accent changes and on the proof-of-life render.
 check-lottie:
-	cd render && npm run gate && npm run test:lib && npm run check:determinism:lottie && npm run check:render:lottie
+	cd render && npm run gate && npm run test:lib && npm run check:determinism:lottie && npm run check:determinism:lottie-src && npm run check:render:lottie
