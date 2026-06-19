@@ -11,6 +11,7 @@ import { makeCaptionShort } from "./v3kit/StyleCaption";
 import { makeEditorialShort } from "./v3kit/StyleEditorial";
 import { makeMotionShort } from "./v3kit/StyleMotion";
 import { FROZEN } from "./v3kit/frozen";
+import { DatavizFixture } from "./dataviz-fixture/Fixture";
 
 // v3 — three distinct aesthetic directions, each for both videos. Frozen timing/VO/audio.
 const V3 = [
@@ -95,6 +96,19 @@ export const RemotionRoot: React.FC = () => {
           );
         }),
       )}
+
+      {/* D3 dataviz fixture — isolated chart-only composition (no captions/bg/audio)
+          used by scripts/check-determinism.mjs to prove the chart geometry renders
+          byte-identically. Fixed durationInFrames (a fixture, not a /short video, so
+          the calculateMetadata-no-const rule does not apply). */}
+      <Composition
+        id="dataviz-fixture"
+        component={DatavizFixture}
+        durationInFrames={90}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+      />
 
       {/* Hooks lab — static first-frame / thumbnail variants (render with
           `npx remotion still <id> out.png`). Self-contained; does not affect the
