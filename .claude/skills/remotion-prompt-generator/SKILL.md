@@ -101,5 +101,27 @@ effective_style: kinetic-typography
 - <list, if any>
 ```
 
+## Lottie accents — carry from `03-assets.md` into `05`
+
+If `03-assets.md` contains a `## Lottie accents` section, carry each accent into `05-remotion-prompt.md` as a layer instruction under the relevant scene. Accents are **ADDITIVE** to the chosen `effective_style` (kinetic-typography or d3) — they do NOT change `effective_style` and must not introduce a fourth value for that field.
+
+For each accent, emit a **Lottie accent layer** block inside the matching scene description:
+
+```
+- Lottie accent: `accent-<beat>.json` · placement: <top|center|above-captions> · sizePx: <n>
+  frame window: [<startFrame>, <endFrame>) within this beat · fps: 30
+```
+
+State that the `.json` is referenced by filename only (no absolute path); codegen will look it up via the seeded public path.
+
+### `05-remotion-prompt.md` accent template (inside the relevant Scene block)
+```markdown
+### Scene N — Payoff (frames 120–180)
+- Text: "…" · Font/size/color: … · Animation: … · Layout: …
+- Lottie accent: `accent-payoff.json` · placement: above-captions · sizePx: 200
+  frame window: [120, 180) · fps: 30
+- Frame-fill note: …
+```
+
 ## Boundaries
 - Produce the prompt only. Do not generate React/Remotion code, install packages, or render. If the script's frame budget doesn't tile, flag it for the review step rather than silently fixing it here.

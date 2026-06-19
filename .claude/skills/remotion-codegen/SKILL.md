@@ -98,6 +98,49 @@ node --experimental-strip-types scripts/check-tiling.mjs F-NNN-slug   # scene ra
 On any gate failure, FIX THE GENERATED FILES (or the upstream spec if the spec is wrong) and
 re-gate. Never leave a red gate. When green, hand off to `scripts/render-run.mjs output/F-NNN`.
 
+## Lottie accents — emit `LottieAccent` per beat
+
+For each accent listed in `05-remotion-prompt.md`, emit a `<LottieAccent>` inside the beat's `<Sequence>`:
+
+```tsx
+import { LottieAccent } from '../lib/lottie';
+
+// inside the beat's <Sequence>:
+<LottieAccent
+  src="accent-<beat>.json"
+  placement={{ anchor: 'above-captions', sizePx: 200 }}
+  windowFrames={SCENES.<beat>.duration}
+/>
+```
+
+**`LottieAccent` props** (imported from `../lib/lottie`):
+- `src?` — public path to the `.json` (the seeded path, e.g. `"accent-payoff.json"`); XOR `animationData?` for an inline object (prefer `src` for file-backed accents).
+- `placement: { anchor: "top" | "center" | "above-captions"; sizePx: number }` — anchor and rendered size.
+- `windowFrames: number` — the beat's frame length; `loopForWindow` plays the animation to fill it.
+- `renderer?: "svg" | "canvas"` — defaults to `"svg"`; only override if the accent visibly degrades in SVG.
+
+**Placement rule:** use `src` (not an absolute path) so `seed-public.sh` resolution applies. The `.json` must already be present in `output/F-NNN/assets/` (written by asset-sourcing) so that `seed-public.sh` copies it to `render/public/` before render.
+
+**Determinism contract:**
+- Accents must be **30fps** (`fr: 30` in the top-level JSON). The codegen gate enforces this — do not emit a `LottieAccent` for a file that fails the fps check.
+- Use `src` path only (not an inline `animationData` blob built at runtime).
+- No runtime recolor (do not pass `colorReplacements` or similar dynamic props).
+
+**Build-time overrun warning:** before emitting the component, read the accent metadata and compare its natural length against the beat window:
+
+```ts
+import { getLottieMetadata } from '../lib/lottie';
+const meta = getLottieMetadata(accentJson);
+if (meta.durationInFrames > windowFrames) {
+  console.warn(
+    `[codegen] accent-${beat}.json natural length (${meta.durationInFrames}f) > beat window (${windowFrames}f). ` +
+    'loopForWindow will play it once then truncate — shorten the accent or widen the beat window.'
+  );
+}
+```
+
+This warning surfaces a spec mistake: `loopForWindow` plays the animation once to fill `windowFrames`, but if the animation is longer than the window the `<Sequence>` will truncate it mid-play. The author should either shorten the accent preset or widen the beat window in `scenes.json`.
+
 ## Boundaries
 - Writes code + `assets.json`; does NOT render, master, download binaries, or upload.
 - Reuses `render/src/lib/` primitives; if a beat needs a genuinely novel mechanic, write it as

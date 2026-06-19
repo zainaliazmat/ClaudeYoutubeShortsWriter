@@ -72,5 +72,48 @@ Follow `references/audio-sources.md` for the source policy and `references/audio
 - Download each item from its original source at render time; keep the license receipt.
 ```
 
+## C. Lottie accents (optional, per beat)
+
+A beat may carry a **Lottie accent** — a small animated overlay (e.g. a success checkmark on the payoff, a pulse on the reveal hit) layered on top of the scene. Accents are purely ADDITIVE; they do not change `effective_style`. Specify accents in `03-assets.md` under a `## Lottie accents` section (omit the section if none are needed).
+
+**Source rule — generate-first:** prefer generating the accent from a preset via the `lottie-master` skill:
+
+```bash
+python3 .claude/skills/lottie-master/scripts/lottie_gen.py <preset> \
+  --color "<palette hex from 03-assets>" --fps 30 \
+  -o output/F-NNN/assets/accent-<beat>.json
+```
+
+Available presets include `check` (success checkmark). Fallback: `lottiefiles:<url>` — download the `.json` manually, place it in `output/F-NNN/assets/`, and record the URL + license. Cross-reference the `lottie-master` skill for preset inventory and generation options.
+
+**Per-accent record** (one row per accent in the table):
+
+| field | value |
+|---|---|
+| `beat` | beat name / number matching the frame-map |
+| `source` | `generate:<preset>` or `lottiefiles:<url>` |
+| `placement` | `top` \| `center` \| `above-captions` |
+| `sizePx` | rendered size in px (e.g. `200`) |
+| `frame window` | `[startFrame, endFrame)` half-open, within the beat's range |
+| `fps` | **30** (always — the gate enforces this) |
+
+**Route-A reject screen** — reject any `.json` that contains:
+- Embedded raster images (PNG/JPEG assets inside the JSON)
+- Non-embedded fonts (text layers whose `t` family isn't a web-safe or Remotion-available font)
+- Expression-driven layers (`x` / expression fields on any keyframe)
+- Nested precomps (`ty: 0` assets) whose `fr` differs from the top-level `fr`
+- Per-file license incompatibilities (the accent must be freely usable without attribution or with attribution clearly recorded)
+
+If any check fails, regenerate with a different preset or source a clean alternative.
+
+### `03-assets.md` accent template
+```markdown
+## Lottie accents
+| beat | source | placement | sizePx | frame window | fps |
+|------|--------|-----------|--------|--------------|-----|
+| payoff | generate:check | above-captions | 200 | [120,180) | 30 |
+```
+(Omit this section entirely if no accents are needed for the video.)
+
 ## Boundaries
 - Spec only — never download binaries or call paid APIs. If a needed asset can't be found monetization-safe, say so and leave a clear TODO rather than guessing a license.
