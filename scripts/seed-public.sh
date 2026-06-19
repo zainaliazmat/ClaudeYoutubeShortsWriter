@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # seed-public.sh <output/F-NNN-slug> [TARGET_PUBLIC_DIR] — copy + CLEAN a public/
 # dir for one run. Wipes run-scoped files (vo.wav + audio binaries) from the target,
-# then copies the run's vo.wav + output/F-NNN/assets/* fresh. Deterministic; no
-# cross-run staleness. Truly-static public files (none today) preserved by name allowlist.
+# then copies the run's vo.wav + output/F-NNN/assets/* (audio + Lottie accent .json) fresh.
+# Deterministic; no cross-run staleness. Truly-static public files (none today) preserved by
+# name allowlist.
 #
 # TARGET_PUBLIC_DIR defaults to render/public (studio/dev). render-run.mjs passes a
 # per-run isolated dir (render/.public-runs/<id>) so concurrent renders never clobber
@@ -41,7 +42,7 @@ fi
 
 # --- copy audio binaries from the run's assets/ (music + SFX) ---
 if [ -d "$RUN_DIR/assets" ]; then
-  find "$RUN_DIR/assets" -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.wav' -o -name '*.m4a' \) \
+  find "$RUN_DIR/assets" -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.wav' -o -name '*.m4a' -o -name '*.json' \) \
     -exec cp {} "$RENDER_PUBLIC/" \;
 fi
 
