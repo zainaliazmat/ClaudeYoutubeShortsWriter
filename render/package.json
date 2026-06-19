@@ -36,7 +36,8 @@
     "lint": "eslint src && tsc",
     "test:lib": "node --experimental-strip-types --test 'src/lib/**/*.test.ts'",
     "gate": "tsc && eslint src && node scripts/check-dataviz-static.mjs && node scripts/check-lottie-fps.mjs",
-    "check:determinism:lottie": "node scripts/check-determinism.mjs lottie-fixture"
+    "check:determinism:lottie": "node scripts/check-determinism.mjs lottie-fixture",
+    "check:render:lottie": "node --experimental-strip-types scripts/check-lottie-render.mjs"
   },
   "sideEffects": [
     "*.css"
