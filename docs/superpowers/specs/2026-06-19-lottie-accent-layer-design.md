@@ -66,35 +66,72 @@ hunt" golden rule:
 - **A — source from LottieFiles (fallback):** `fetch_lottie.py` to pull/inspect, with a **per-file
   license screen** mirroring the audio monetization gate. The **Lottie Simple License** is
   commercial-OK / attribution-not-required, but licenses vary per file — verify each, never re-host
-  marketplace assets as free, and reject anything with embedded raster images or non-embedded fonts
-  (they break determinism / safe-area and the ThorVG/lottie-web feature gaps).
+  marketplace assets as free. **Reject list (determinism / feature gaps):** embedded raster images;
+  non-embedded fonts (convert text to outlines); **and expression-driven layers** — Remotion's own
+  docs warn certain After Effects expressions don't seek deterministically under `goToAndStop()` and
+  flicker, with no upstream fix. Generate-first output is shape-based and expression-free, so this only
+  bites route A; the render-hash fixture is the backstop.
 
 ## Components
 
-1. **Install the `lottie-master` skill** → `.claude/skills/lottie-master/`. Resolve the two duplicate
-   copies in the research folder (`lottie-master/` and `lottie-master (2)/`) — keep one. Scripts are
-   stdlib-only Python (no venv); `make_dotlottie.mjs` needs npm but is authoring-only and not required
-   for the render path.
-2. **`@remotion/lottie` dependency** in `render/package.json`, pinned to **4.0.478** to match every
-   other `@remotion/*` package.
+1. **Install the `lottie-master` skill** → `.claude/skills/lottie-master/`. The research folder has two
+   copies (`lottie-master/` and `lottie-master (2)/`); **choose the canonical one by content, not by
+   name** — diff the two and keep the one with the later / more-complete templates and references (the
+   `(2)` copy is often the newer download), then delete the other so the stale copy isn't silently
+   installed. Scripts are stdlib-only Python (no venv); `make_dotlottie.mjs` needs npm but is
+   authoring-only and not required for the render path.
+2. **`@remotion/lottie` dependency** in `render/package.json`, **pinned to the exact version already
+   used by the other `@remotion/*` packages, with the caret stripped** — not a hand-typed literal.
+   Today that is `4.0.478` (verified: `remotion`, `@remotion/cli`, `@remotion/google-fonts`,
+   `@remotion/media` are all on `4.0.478`, and `@remotion/lottie@4.0.478` is published on npm). The
+   rule, not the number, is load-bearing: version **skew between `@remotion/*` packages is a known
+   flicker cause**, so this must always equal the rest of the Remotion suite exactly.
 3. **`render/src/lib/lottie/LottieAccent.tsx`** — the primitive, wrapping `@remotion/lottie` with house
    conventions:
-   - loads `.json` via `staticFile()` + `delayRender()`/`continueRender()` (returns `null` until loaded);
-   - brand-palette color (prefer generate-in-palette; runtime recolor optional, not required for 3a);
-   - safe-area-aware placement — clear of the burned-in captions, the bottom ~15%, and the very top;
-   - loop-aware (accent loop must not fight the video's invisible loop seam);
-   - a quality-floor minimum render size so an accent is never a dead speck.
+   - **Load:** `.json` via `staticFile()` + `delayRender()`/`continueRender()` (returns `null` until
+     loaded), with **`cancelRender()` in the `.catch`** and a `retries` value — multiple accents each
+     hold a `delayRender` handle and the default ~30s timeout can blow under render concurrency / slow
+     disk reads.
+   - **Stable identity (correctness, not just perf):** Remotion re-initializes the animation whenever
+     the `animationData` object identity changes. The parsed object **MUST be memoized** (module-level
+     cache keyed by `staticFile` path, or `useMemo`) so identity is stable for the whole composition —
+     otherwise re-parse on a frame-driven re-render causes mid-render re-init → flicker / dropped first
+     loop.
+   - **fps match (highest-value quality guard):** read the animation's natural framerate via
+     `getLottieMetadata().fps` and **assert it equals `useVideoConfig().fps`** (the channel canonical
+     **30fps**); fail loudly on mismatch rather than letting `goToAndStop()` seek a mis-scaled timeline
+     (wrong speed + a loop period that no longer divides into integer composition frames → seam
+     flicker). Resampling is out of scope for 3a — generate at 30fps instead.
+   - **Frame-window-aware looping:** the accent either **completes once within its frame window**, or
+     loops on an **integer-frame period that exactly divides the window** — computed from
+     `getLottieMetadata().durationInFrames` (which Remotion floors to an integer, so even a "clean"
+     loop can be a fraction off at the seam after rounding). The accent **must not cross the video's
+     invisible loop seam** — place it wholly within one pass.
+   - **Renderer (main perf lever):** expose the `renderer` prop, **default `"svg"`** (most faithful);
+     documented escape hatch to `"canvas"` for a busy micro-illustration that tanks render time at
+     1080p.
+   - **Aspect:** pin a `preserveAspectRatio` default so an accent whose natural aspect ≠ its placement
+     box doesn't letterbox/crop unexpectedly near the safe-area edge.
+   - **Color:** **generate-in-palette is a hard rule for 3a** — runtime recolor is out of scope (it
+     mutates `animationData` and collides with the identity-stability rule above). Recolor happens at
+     generate time via `lottie_gen.py --color`.
+   - **Safe area + floor:** placement clear of the burned-in captions, the bottom ~15%, and the very
+     top; a quality-floor minimum render size so an accent is never a dead speck.
    - Exported from `render/src/lib/lottie/index.ts`.
 4. **Determinism proof:**
    - extend the existing **static determinism guard** to cover `lib/lottie` (no `Math.random`, no
-     `Date.now()`, no `new Date()`; drive only off frame);
-   - add a `LottieAccent` fixture to the **Phase-2 render-hash determinism check** so an accent renders
-     byte-identically across two runs. (The `.json` itself is static committed data, so determinism is
-     by construction — the fixture guards against regressions in the wrapper.)
+     `Date.now()`, no `new Date()`; drive only off frame) **and add an fps-match assertion** (accent
+     `fr` vs comp fps);
+   - add a `LottieAccent` fixture to the **Phase-2 render-hash determinism check** that proves both
+     reproducibility *and* correctness: (a) accent `fr` == comp fps, (b) the accent's rendered bounding
+     box falls inside the safe area on a sampled frame, (c) no transparent/blank frame inside the
+     accent's window (the "not a dead speck" floor checked in pixels, not just configured min-size).
+     (The static `.json` already guarantees same-input→same-bytes; these assertions guard quality, not
+     just reproducibility.)
 5. **Light pipeline wiring:**
    - `asset-sourcing`: when a beat benefits from a motion accent/icon, record it in `03-assets.md`
-     (beat, preset/source, color token, placement, frame window), generate-first, license-screen any
-     sourced file.
+     (beat, preset/source, color token, placement, frame window, **and the accent fps**), generate-first
+     **at the channel canonical 30fps**, license-screen any sourced file.
    - `remotion-prompt-generator`: carry the accent (which beats, which file, frames) into
      `05-remotion-prompt.md`.
    - `remotion-codegen`: emit `LottieAccent` usage in the scene `.tsx`, write the `.json` into
@@ -120,8 +157,10 @@ qa-probe / render-qa  →  accent clears safe-area + captions, is loop-safe, not
 ## Testing / acceptance
 
 - `cd render && npm run gate && npm run test:lib` green; no hand edits.
-- The static determinism guard covers `lib/lottie`; the render-hash fixture proves a `LottieAccent`
-  renders byte-identically twice.
+- The static determinism guard covers `lib/lottie` (no `Date.now()` etc. **+ fps-match**); the
+  render-hash fixture proves a `LottieAccent` renders byte-identically twice **and** asserts the three
+  quality checks: (a) accent fps == comp fps, (b) bounding box inside the safe area on a sampled frame,
+  (c) no blank/transparent frame inside the accent's window.
 - **Proof-of-life:** land the primitive by adding one real accent (e.g. a `success-check` or arrow)
   to an existing short or the next `/short` run, rendered through the full render→QA loop to
   **STATUS: PASS** (≥85, no blockers, Cat 9 ≥70%) with the accent clear of the safe-area. (Which video
@@ -140,12 +179,19 @@ qa-probe / render-qa  →  accent clears safe-area + captions, is loop-safe, not
 
 ## Risks & mitigations
 
-- **lottie-web feature gaps / text rendering:** native fonts and unsupported After Effects features
-  fail silently. Mitigation: generate-first (our `lottie_gen.py` output is shape-based, no embedded
-  fonts/rasters); for sourced files, reject embedded rasters and convert text to outlines; the
-  render-hash fixture + visual QA catch regressions.
-- **Loop seam fight:** an accent's own loop period may not divide the video's loop. Mitigation:
-  `LottieAccent` loop control + the existing loop-seam QA probe; prefer accents that resolve to a
-  rest state within their beat window.
+- **fps mismatch (highest-likelihood quality bug):** an accent baked at a different `fr` than the
+  comp's 30fps seeks to a mis-scaled timeline → wrong speed + non-integer loop period. Mitigation:
+  generate at 30fps; `getLottieMetadata().fps` assertion in the primitive **and** the static guard.
+- **`animationData` re-init / flicker:** unstable object identity across frame-driven re-renders.
+  Mitigation: memoize the parsed object (path-keyed cache); recolor strictly at generate time.
+- **lottie-web feature gaps / text / expressions:** native fonts, embedded rasters, and certain AE
+  expressions fail silently or flicker under `goToAndStop()`. Mitigation: generate-first (shape-based,
+  no fonts/rasters/expressions); for sourced files, reject all three; render-hash fixture + visual QA
+  are the backstop.
+- **Loop seam fight:** an accent's integer-rounded loop period may not divide the video's loop, or its
+  window may straddle the seam. Mitigation: accent completes once or loops on an integer-frame divisor
+  of its window, placed wholly within one pass; existing loop-seam QA probe.
+- **`delayRender` timeout under concurrency:** many accent handles + slow disk can exceed the ~30s
+  default. Mitigation: `cancelRender()` in `.catch` + a `retries` value.
 - **Skill duplication drift:** two copies of `lottie-master` in the research folder. Mitigation:
-  install exactly one canonical copy under `.claude/skills/` during implementation.
+  diff and install exactly one canonical (more-complete) copy under `.claude/skills/`; delete the other.
