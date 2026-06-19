@@ -67,10 +67,12 @@ hunt" golden rule:
   license screen** mirroring the audio monetization gate. The **Lottie Simple License** is
   commercial-OK / attribution-not-required, but licenses vary per file — verify each, never re-host
   marketplace assets as free. **Reject list (determinism / feature gaps):** embedded raster images;
-  non-embedded fonts (convert text to outlines); **and expression-driven layers** — Remotion's own
+  non-embedded fonts (convert text to outlines); **expression-driven layers** — Remotion's own
   docs warn certain After Effects expressions don't seek deterministically under `goToAndStop()` and
-  flicker, with no upstream fix. Generate-first output is shape-based and expression-free, so this only
-  bites route A; the render-hash fixture is the backstop.
+  flicker, with no upstream fix; **and nested precomps baked at a differing `fr`** — `getLottieMetadata()`
+  reads only the top-level framerate, so a file can pass the top `fr == 30` assertion while a precomp
+  seeks mis-scaled one level down. Generate-first output is shape-based, expression-free, and
+  single-`fr`, so this only bites route A; the render-hash fixture is the backstop.
 
 ## Components
 
@@ -99,9 +101,11 @@ hunt" golden rule:
      loop.
    - **fps match (highest-value quality guard):** read the animation's natural framerate via
      `getLottieMetadata().fps` and **assert it equals `useVideoConfig().fps`** (the channel canonical
-     **30fps**); fail loudly on mismatch rather than letting `goToAndStop()` seek a mis-scaled timeline
-     (wrong speed + a loop period that no longer divides into integer composition frames → seam
-     flicker). Resampling is out of scope for 3a — generate at 30fps instead.
+     **30fps**). On mismatch during a **real render**, the assertion **hard-fails the render** (throws,
+     aborting) — it does **not** fall through to `null` or silently drop the accent, and it must **not**
+     be wrapped in a `try/catch` that swallows it. A mismatched accent is a quality defect, not a
+     degrade-gracefully case; fail fast so codegen authors fix the source fps. Resampling is out of
+     scope for 3a — generate at 30fps instead.
    - **Frame-window-aware looping:** the accent either **completes once within its frame window**, or
      loops on an **integer-frame period that exactly divides the window** — computed from
      `getLottieMetadata().durationInFrames` (which Remotion floors to an integer, so even a "clean"
@@ -124,10 +128,11 @@ hunt" golden rule:
      `fr` vs comp fps);
    - add a `LottieAccent` fixture to the **Phase-2 render-hash determinism check** that proves both
      reproducibility *and* correctness: (a) accent `fr` == comp fps, (b) the accent's rendered bounding
-     box falls inside the safe area on a sampled frame, (c) no transparent/blank frame inside the
-     accent's window (the "not a dead speck" floor checked in pixels, not just configured min-size).
-     (The static `.json` already guarantees same-input→same-bytes; these assertions guard quality, not
-     just reproducibility.)
+     box falls inside the safe area on a sampled frame, (c) no blank frame inside the accent's **sustain
+     window** — i.e. excluding the entrance/exit ramp, so a legitimate fade-in/out isn't flagged;
+     defined as a minimum non-transparent pixel fraction over the sustain frames (the "not a dead speck"
+     floor checked in pixels, not just configured min-size). (The static `.json` already guarantees
+     same-input→same-bytes; these assertions guard quality, not just reproducibility.)
 5. **Light pipeline wiring:**
    - `asset-sourcing`: when a beat benefits from a motion accent/icon, record it in `03-assets.md`
      (beat, preset/source, color token, placement, frame window, **and the accent fps**), generate-first
@@ -160,7 +165,8 @@ qa-probe / render-qa  →  accent clears safe-area + captions, is loop-safe, not
 - The static determinism guard covers `lib/lottie` (no `Date.now()` etc. **+ fps-match**); the
   render-hash fixture proves a `LottieAccent` renders byte-identically twice **and** asserts the three
   quality checks: (a) accent fps == comp fps, (b) bounding box inside the safe area on a sampled frame,
-  (c) no blank/transparent frame inside the accent's window.
+  (c) min non-transparent pixel fraction across the accent's **sustain window** (entrance/exit ramp
+  excluded, so a fade-in/out doesn't trip the gate).
 - **Proof-of-life:** land the primitive by adding one real accent (e.g. a `success-check` or arrow)
   to an existing short or the next `/short` run, rendered through the full render→QA loop to
   **STATUS: PASS** (≥85, no blockers, Cat 9 ≥70%) with the accent clear of the safe-area. (Which video
