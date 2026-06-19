@@ -129,7 +129,7 @@ import { LottieAccent } from '../lib/lottie';
 **Build-time overrun warning:** before emitting the component, read the accent metadata and compare its natural length against the beat window:
 
 ```ts
-import { getLottieMetadata } from '../lib/lottie';
+import { getLottieMetadata } from '@remotion/lottie';
 const meta = getLottieMetadata(accentJson);
 if (meta.durationInFrames > windowFrames) {
   console.warn(
