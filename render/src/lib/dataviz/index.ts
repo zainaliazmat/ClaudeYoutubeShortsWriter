@@ -12,3 +12,4 @@ export * from "./colors";
 export { GrowthCurve } from "./GrowthCurve";
 export { BarChart } from "./BarChart";
 export { Distribution } from "./Distribution";
+export { GapBars, type GapItem } from "./GapBars";
